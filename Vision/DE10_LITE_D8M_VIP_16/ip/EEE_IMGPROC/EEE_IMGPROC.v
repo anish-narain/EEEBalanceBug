@@ -78,9 +78,9 @@ wire         sop, eop, in_valid, out_ready;
 
 // Detect red areas
 wire red_detect, green_detect, yellow_detect;
-assign red_detect = red[7] & ~green[7] & ~blue[7];
-assign green_detect = ~red[7] & green[7] & ~blue[7];
-assign yellow_detect = red[7] & green[7] & ~blue[7];
+assign red_detect = (red[7:6] ==  2'b11) & ~green[7] & ~blue[7];
+assign green_detect = ~red[7] & (green[7:6] == 2'b11) & ~blue[7];
+assign yellow_detect = (red[7:6] == 2'b11) & (green[7:6] == 2'b11) & ~blue[7];
 
 // Find boundary of cursor box
 
@@ -97,7 +97,7 @@ wire redbb_active, greenbb_active, yellowbb_active;
 assign redbb_active = (x == r_left) | (x == r_right) | (y == r_top) | (y == r_bottom);
 assign greenbb_active = (x == g_left) | (x == g_right) | (y == g_top) | (y == g_bottom);
 assign yellowbb_active = (x == y_left) | (x == y_right) | (y == y_top) | (y == y_bottom);
-assign new_image = redbb_active ? {8'hff, 8'h92, 8'hf1} : greenbb_active ? bb_col : yellowbb_active ? bb_col : detect_area_high;
+assign new_image = redbb_active ? {8'd153, 8'd0, 8'd0} : greenbb_active ? {8'd0, 8'd153, 8'd0} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
 
 // Switch output pixels depending on mode switch
 // Don't modify the start-of-packet word - it's a packet discriptor
