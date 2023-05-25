@@ -1,7 +1,13 @@
-var http = require('http');
-var server = http.createServer(function(req, res){
-res.writeHead(200, {'Content-Type':'text/plain'})
-res.end('You have reached your AWS EC2 web server...');
+var express = require("express");
+var server = express();
+server.get("/", function (req, res) {
+  res.sendFile("/home/ubuntu/nodeJSTest/index.html");
+});
+
+server.get('/primeOrNot.js', function(req, res) {
+res.sendFile('/home/ubuntu/nodeJSTest/primeOrNot.js');
 });
 console.log('Server is running on port 3000');
-server.listen(3000,'0.0.0.0');
+
+console.log("Server is running on port 3000");
+server.listen(3000, "0.0.0.0");
