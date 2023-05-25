@@ -507,6 +507,61 @@ void OV8865SetGain(alt_u16 gain){
 	oc_i2c_uninit(I2C_OPENCORES_CAMERA_BASE);
 }
 
+void OV8865RedGain(alt_u16 RedGain){
+
+	Focus_Released(); // waiting for VCM release I2C bus
+
+	int bSuccess = oc_i2c_init_ex(I2C_OPENCORES_CAMERA_BASE, 50*1000*1000,400*1000); //I2C: 400K
+	if (!bSuccess)
+		printf("failed to init MIPI- Camera i2c\r\n");
+
+	if (RedGain > 0x7FFF) RedGain = 0x7FFF;
+	if (RedGain < 0x0000) RedGain = 0x0000;
+
+	OV8865_write_cmos_sensor_8(0x5018, (RedGain >> 6) & 0xFF);
+	OV8865_write_cmos_sensor_8(0x5019, RedGain & 0x3F);
+
+
+	oc_i2c_uninit(I2C_OPENCORES_CAMERA_BASE);
+}
+
+void OV8865GreenGain(alt_u16 GreenGain){
+
+	Focus_Released(); // waiting for VCM release I2C bus
+
+	int bSuccess = oc_i2c_init_ex(I2C_OPENCORES_CAMERA_BASE, 50*1000*1000,400*1000); //I2C: 400K
+	if (!bSuccess)
+		printf("failed to init MIPI- Camera i2c\r\n");
+
+	if (GreenGain > 0x7FFF) GreenGain = 0x7FFF;
+	if (GreenGain < 0x0000) GreenGain = 0x0000;
+
+	OV8865_write_cmos_sensor_8(0x501A, (GreenGain >> 6) & 0xFF);
+	OV8865_write_cmos_sensor_8(0x501B, GreenGain & 0x3F);
+
+
+	oc_i2c_uninit(I2C_OPENCORES_CAMERA_BASE);
+}
+
+void OV8865BlueGain(alt_u16 BlueGain){
+
+	Focus_Released(); // waiting for VCM release I2C bus
+
+	int bSuccess = oc_i2c_init_ex(I2C_OPENCORES_CAMERA_BASE, 50*1000*1000,400*1000); //I2C: 400K
+	if (!bSuccess)
+		printf("failed to init MIPI- Camera i2c\r\n");
+
+	if (BlueGain > 0x7FFF) BlueGain = 0x7FFF;
+	if (BlueGain < 0x0000) BlueGain = 0x0000;
+
+	OV8865_write_cmos_sensor_8(0x501C, (BlueGain >> 6) & 0xFF);
+	OV8865_write_cmos_sensor_8(0x501D, BlueGain & 0x3F);
+
+
+	oc_i2c_uninit(I2C_OPENCORES_CAMERA_BASE);
+}
+
+
 alt_u32 OV8865ReadExposure(){
 
 	alt_u32 exposure;

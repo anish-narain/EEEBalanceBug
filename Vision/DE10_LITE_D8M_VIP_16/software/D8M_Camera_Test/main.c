@@ -20,11 +20,14 @@
 #define EEE_IMGPROC_ID 2
 #define EEE_IMGPROC_BBCOL 3
 
-#define EXPOSURE_INIT 0x002000
+#define EXPOSURE_INIT 0x000700
 #define EXPOSURE_STEP 0x100
 #define GAIN_INIT 0x080
 #define GAIN_STEP 0x040
 #define DEFAULT_LEVEL 3
+
+#define RGB_GAIN_INIT 0x400
+#define RGB_STEP 0x50
 
 #define MIPI_REG_PHYClkCtl		0x0056
 #define MIPI_REG_PHYData0Ctl	0x0058
@@ -188,6 +191,10 @@ int main()
     	int boundingBoxColour = 0;
     	alt_u32 exposureTime = EXPOSURE_INIT;
     	alt_u16 gain = GAIN_INIT;
+    	alt_u16 RedGain = RGB_GAIN_INIT;
+    	alt_u16 GreenGain = RGB_GAIN_INIT;
+    	alt_u16 BlueGain = RGB_GAIN_INIT;
+
 
         OV8865SetExposure(exposureTime);
         OV8865SetGain(gain);
@@ -300,7 +307,38 @@ int main()
         	   OV8865_FOCUS_Move_to(current_focus);
         	   printf("\nFocus = %x ",current_focus);
        	   	   break;}
-       }
+
+			case 'i':{
+				RedGain += RGB_STEP;
+				OV8865RedGain(RedGain);
+				fprintf(stderr, "\n red Gain is now set to  = %x", RedGain);
+				break;}
+			case 'j':{
+				RedGain -= RGB_STEP;
+				OV8865RedGain(RedGain);
+				fprintf(stderr, "\n red Gain is now set to  = %x", RedGain);
+				break;}
+			case 'k':{
+				GreenGain += RGB_STEP;
+				OV8865GreenGain(GreenGain);
+				fprintf(stderr, "\n green Gain is now set to = %x", GreenGain);
+				break;}
+			case 'o':{
+				GreenGain -= RGB_STEP;
+				OV8865GreenGain(GreenGain);
+				fprintf(stderr, "\n green Gain is now set to = %x", GreenGain);
+				break;}
+			case 'p':{
+				BlueGain += RGB_STEP;
+				OV8865BlueGain(BlueGain);
+				fprintf(stderr, "\n blue Gain is now set to = %x", BlueGain);
+				break;}
+			case 'q':{
+				BlueGain -= RGB_STEP;
+				OV8865BlueGain(BlueGain);
+				fprintf(stderr, "\n blue Gain is now set to = %x", BlueGain);
+				break;}
+			   }
 
 
 	   //Main loop delay

@@ -77,19 +77,21 @@ wire         sop, eop, in_valid, out_ready;
 ////////////////////////////////////////////////////////////////////////
 
 // Detect red areas
-wire red_detect, green_detect, yellow_detect;
-assign red_detect = (red[7:6] ==  2'b11) & ~green[7] & ~blue[7];
-assign green_detect = ~red[7] & (green[7:6] == 2'b11) & ~blue[7];
-assign yellow_detect = (red[7:6] == 2'b11) & (green[7:6] == 2'b11) & ~blue[7];
+wire red_detect, green_detect, yellow_detect, white_detect;
+assign red_detect = (red > 8'd150) & (green < 8'd50) & (blue < 8'd100);
+assign green_detect = (red < 8'd20) & (green > 8'd150) & (blue < 8'd100);
+assign yellow_detect = (red > 8'd150) & (green > 8'd150) & (blue < 8'd100);
+assign white_detect= (red > 8'd200) & (green > 8'd200) & (blue > 8'd200);
 
 // Find boundary of cursor box
 
 // Highlight detected areas
 wire [23:0] detect_area_high;
 assign grey = green[7:1] + red[7:2] + blue[7:2]; //Grey = green/2 + red/4 + blue/4
-assign detect_area_high  =  red_detect ? {8'hff, 8'h0, 8'h0} : 
+assign detect_area_high  = red_detect ? {8'hff, 8'h0, 8'h0} : 
 									green_detect ? {8'h0, 8'hff, 8'h0} : 
-									yellow_detect ? {8'hff, 8'hff, 8'h0} : {grey, grey, grey};
+									yellow_detect ? {8'hff, 8'hff, 8'h0} : 
+									white_detect ? {8'h0, 8'h0, 8'hFF}: {grey, grey, grey};
 
 // Show bounding box
 wire [23:0] new_image;
