@@ -22,6 +22,17 @@ function App() {
     setInputValue(event.target.value);
   };
 
+  const handleButtonClick = async (direction) => {
+    const response = await fetch("http://localhost:3001/buttonClick", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ direction }),
+    });
+    // Handle the response from the server if needed
+  };
+
   return (
     <div className="App">
       <p>This text is printed inside the App component</p>
@@ -29,10 +40,10 @@ function App() {
         <input type="number" value={inputValue} onChange={handleInputChange} />
       </div>
       <div className="button-container">
-        <button>Up</button>
-        <button>Down</button>
-        <button>Left</button>
-        <button>Right</button>
+        <button onClick={() => handleButtonClick("Up")}>Up</button>
+        <button onClick={() => handleButtonClick("Down")}>Down</button>
+        <button onClick={() => handleButtonClick("Left")}>Left</button>
+        <button onClick={() => handleButtonClick("Right")}>Right</button>
       </div>
     </div>
   );
