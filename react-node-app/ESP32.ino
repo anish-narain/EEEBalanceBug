@@ -20,20 +20,22 @@ void setup() {
   Serial.println(WiFi.localIP());
 }
 
-int httpResponseCode = -5;
+
 
 void loop() {
   // Example button direction
-  String direction = "right";
+
   
   // Create a JSON payload with the button click direction
-  String jsonPayload = "{\"direction\":\"" + direction + "\"}";
+  String coordinates = "some_coordinates";
+  String jsonPayload = "{\"coordinates\":\"" + coordinates + "\"}";
+
 
   HTTPClient http;
   http.begin("http://" + String(serverAddress) + ":" + String(serverPort) + "/roverCoordinatePost");  // Specify the server address, port, and endpoint
   http.addHeader("Content-Type", "application/json");
   
-  httpResponseCode = http.POST(jsonPayload);
+  int httpResponseCode = http.POST(jsonPayload);
   
   if (httpResponseCode > 0) {
     Serial.print("Button click request sent. Response code: ");
