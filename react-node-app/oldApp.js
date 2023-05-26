@@ -6,8 +6,8 @@ function App() {
 
   useEffect(() => {
     // Simulating server request to retrieve numerical input
-    fetchNumericalInput().then((data) => {
-      setInputValue(data.numericalInput);
+    fetchNumericalInput().then((response) => {
+      setInputValue(response);
     });
   }, []);
 
@@ -15,7 +15,7 @@ function App() {
     // Simulating server request
     const response = await fetch("http://localhost:3001/numericalInput");
     const data = await response.json();
-    return data;
+    return data.numericalInput;
   };
 
   const handleInputChange = (event) => {
@@ -23,7 +23,7 @@ function App() {
   };
 
   const handleButtonClick = async (direction) => {
-    await fetch("http://localhost:3001/buttonClick", {
+    const response = await fetch("http://localhost:3001/buttonClick", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -50,7 +50,3 @@ function App() {
 }
 
 export default App;
-
-
-
-
