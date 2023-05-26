@@ -77,9 +77,9 @@ wire         sop, eop, in_valid, out_ready;
 ////////////////////////////////////////////////////////////////////////
 
 // Detect red areas
-wire red_detect, green_detect, yellow_detect, white_detect;
-assign red_detect = (red > 8'd150) & (green < 8'd50) & (blue < 8'd100);
-assign green_detect = (red < 8'd20) & (green > 8'd150) & (blue < 8'd100);
+wire red_detect, blue_detect, yellow_detect, white_detect;
+assign red_detect = (red > 8'd120) & (green < 8'd75) & (blue < 8'd100);
+assign blue_detect = (red < 8'd100) & (green < 8'd100) & (blue > 8'd150);
 assign yellow_detect = (red > 8'd150) & (green > 8'd150) & (blue < 8'd100);
 assign white_detect= (red > 8'd200) & (green > 8'd200) & (blue > 8'd200);
 
@@ -89,17 +89,17 @@ assign white_detect= (red > 8'd200) & (green > 8'd200) & (blue > 8'd200);
 wire [23:0] detect_area_high;
 assign grey = green[7:1] + red[7:2] + blue[7:2]; //Grey = green/2 + red/4 + blue/4
 assign detect_area_high  = red_detect ? {8'hff, 8'h0, 8'h0} : 
-									green_detect ? {8'h0, 8'hff, 8'h0} : 
+									blue_detect ? {8'h0, 8'h00, 8'hff} : 
 									yellow_detect ? {8'hff, 8'hff, 8'h0} : 
-									white_detect ? {8'h0, 8'h0, 8'hFF}: {grey, grey, grey};
+									white_detect ? {8'h0, 8'hff, 8'h0}: {grey, grey, grey};
 
 // Show bounding box
 wire [23:0] new_image;
-wire redbb_active, greenbb_active, yellowbb_active;
+wire redbb_active, bluebb_active, yellowbb_active;
 assign redbb_active = (x == r_left) | (x == r_right) | (y == r_top) | (y == r_bottom);
-assign greenbb_active = (x == g_left) | (x == g_right) | (y == g_top) | (y == g_bottom);
+assign bluebb_active = (x == b_left) | (x == b_right) | (y == b_top) | (y == b_bottom);
 assign yellowbb_active = (x == y_left) | (x == y_right) | (y == y_top) | (y == y_bottom);
-assign new_image = redbb_active ? {8'd153, 8'd0, 8'd0} : greenbb_active ? {8'd0, 8'd153, 8'd0} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
+assign new_image = redbb_active ? {8'd153, 8'd0, 8'd0} : bluebb_active ? {8'd0, 8'd153, 8'd0} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
 
 // Switch output pixels depending on mode switch
 // Don't modify the start-of-packet word - it's a packet discriptor
@@ -128,7 +128,7 @@ end
 
 //Find first and last red pixels
 reg [10:0] r_x_min, r_y_min, r_x_max, r_y_max;
-reg [10:0] g_x_min, g_y_min, g_x_max, g_y_max;
+reg [10:0] b_x_min, b_y_min, b_x_max, b_y_max;
 reg [10:0] y_x_min, y_y_min, y_x_max, y_y_max;
 
 always@(posedge clk) begin
@@ -138,11 +138,11 @@ always@(posedge clk) begin
 		if (y < r_y_min) r_y_min <= y;
 		r_y_max <= y;
 	end
-	else if (green_detect & in_valid) begin	//Update bounds when the pixel is red
-		if (x < g_x_min) g_x_min <= x;
-		if (x > g_x_max) g_x_max <= x;
-		if (y < g_y_min) g_y_min <= y;
-		g_y_max <= y;
+	else if (blue_detect & in_valid) begin	//Update bounds when the pixel is red
+		if (x < b_x_min) b_x_min <= x;
+		if (x > b_x_max) b_x_max <= x;
+		if (y < b_y_min) b_y_min <= y;
+		b_y_max <= y;
 	end
 	else if (yellow_detect & in_valid) begin	//Update bounds when the pixel is red
 		if (x < y_x_min) y_x_min <= x;
@@ -152,7 +152,7 @@ always@(posedge clk) begin
 	end
 	if (sop & in_valid) begin	//Reset bounds on start of packet
       r_x_min  <= IMAGE_W-11'h1; r_x_max  <= 0;	r_y_min  <= IMAGE_H-11'h1;	r_y_max <= 0;
-		g_x_min  <= IMAGE_W-11'h1;	g_x_max  <= 0;	g_y_min  <= IMAGE_H-11'h1;	g_y_max <= 0;
+		b_x_min  <= IMAGE_W-11'h1;	b_x_max  <= 0;	b_y_min  <= IMAGE_H-11'h1;	b_y_max <= 0;
 		y_x_min  <= IMAGE_W-11'h1;	y_x_max  <= 0;	y_y_min  <= IMAGE_H-11'h1;	y_y_max <= 0;
 			
    end
@@ -161,7 +161,7 @@ end
 //Process bounding box at the end of the frame.
 reg [2:0] msg_state;
 reg [10:0] r_left, r_right, r_top, r_bottom;
-reg [10:0] g_left, g_right, g_top, g_bottom;
+reg [10:0] b_left, b_right, b_top, b_bottom;
 reg [10:0] y_left, y_right, y_top, y_bottom;
 reg [7:0] frame_count;
 always@(posedge clk) begin
@@ -173,10 +173,10 @@ always@(posedge clk) begin
 		r_top <= r_y_min;
 		r_bottom <= r_y_max;
 		
-		g_left <= g_x_min;
-		g_right <= g_x_max;
-		g_top <= g_y_min;
-		g_bottom <= g_y_max;
+		b_left <= b_x_min;
+		b_right <= b_x_max;
+		b_top <= b_y_min;
+		b_bottom <= b_y_max;
 		
 		y_left <= y_x_min;
 		y_right <= y_x_max;
@@ -236,11 +236,11 @@ always@(*) begin	//Write words to FIFO as state machine advances
 		end
 
 		3'b100: begin
-			msg_buf_in = {5'b0, g_x_min, 5'b0, g_y_min};	//Top left coordinate - GREEN
+			msg_buf_in = {5'b0, b_x_min, 5'b0, b_y_min};	//Top left coordinate - BLUE
 			msg_buf_wr = 1'b1;
 		end
 		3'b101: begin
-			msg_buf_in = {5'b0, g_x_max, 5'b0, g_y_max}; //Bottom right coordinate - GREEN
+			msg_buf_in = {5'b0, b_x_max, 5'b0, b_y_max}; //Bottom right coordinate - BLUE
 			msg_buf_wr = 1'b1;
 		end
 		

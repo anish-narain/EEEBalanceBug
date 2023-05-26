@@ -3340,8 +3340,8 @@ int main()
     	alt_u16 RedGain = RGB_GAIN_INIT;
    21868:	00810004 	movi	r2,1024
    2186c:	e0bffa8d 	sth	r2,-22(fp)
-    	alt_u16 GreenGain = RGB_GAIN_INIT;
-   21870:	00810004 	movi	r2,1024
+    	alt_u16 GreenGain = GREEN_Gain_INIT;
+   21870:	00815004 	movi	r2,1344
    21874:	e0bffb0d 	sth	r2,-20(fp)
     	alt_u16 BlueGain = RGB_GAIN_INIT;
    21878:	00810004 	movi	r2,1024

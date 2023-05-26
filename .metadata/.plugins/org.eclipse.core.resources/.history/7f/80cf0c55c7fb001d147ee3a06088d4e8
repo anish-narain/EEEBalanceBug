@@ -27,7 +27,6 @@
 #define DEFAULT_LEVEL 3
 
 #define RGB_GAIN_INIT 0x400
-#define GREEN_Gain_INIT 0x540
 #define RGB_STEP 0x50
 
 #define MIPI_REG_PHYClkCtl		0x0056
@@ -193,7 +192,7 @@ int main()
     	alt_u32 exposureTime = EXPOSURE_INIT;
     	alt_u16 gain = GAIN_INIT;
     	alt_u16 RedGain = RGB_GAIN_INIT;
-    	alt_u16 GreenGain = GREEN_Gain_INIT;
+    	alt_u16 GreenGain = RGB_GAIN_INIT;
     	alt_u16 BlueGain = RGB_GAIN_INIT;
 
 
