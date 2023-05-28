@@ -20,8 +20,6 @@ void setup() {
   Serial.println(WiFi.localIP());
 }
 
-
-
 void loop() {
   // Example button direction
 
@@ -30,39 +28,49 @@ void loop() {
   String coordinates = "some_coordinates";
   String jsonPayload = "{\"coordinates\":\"" + coordinates + "\"}";
 
+  //GET AND POST ENDPOINTS SETUP =================================================
+  HTTPClient httpPOST;
+  HTTPClient httpGet;
+  
+  String PostEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/roverCoordinatePost"
+  httpPOST.begin(PostEndpoint);  // Specify the server address, port, and endpoint
+  httpPOST.addHeader("Content-Type", "application/json");
 
-  HTTPClient http;
-  http.begin("http://" + String(serverAddress) + ":" + String(serverPort) + "/roverCoordinatePost");  // Specify the server address, port, and endpoint
-  http.addHeader("Content-Type", "application/json");
+  String GetEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/numericalInputESP";
+  httpGet.begin(GetEndpoint);  // Specify the server address and endpoint
   
-  int httpResponseCode = http.POST(jsonPayload);
+  //POST Code =====================================================================
+  int httpResponseCodePost = httpPOST.POST(jsonPayload);
   
-  if (httpResponseCode > 0) {
+  if (httpResponseCodePost > 0) {
     Serial.print("Button click request sent. Response code: ");
-    Serial.println(httpResponseCode);
+    Serial.println(httpResponseCodePost);
     
-    String responseBody = http.getString();
+    String responseBody = httpPOST.getString();
     Serial.print("Response body: ");
     Serial.println(responseBody);
   } else {
     Serial.print("Error sending request. Error code: ");
-    Serial.println(httpResponseCode);
+    Serial.println(httpResponseCodePost);
   }
 
- // int httpResponseCode2 = http.GET();
- //     
- // if (httpResponseCode2>0) {
- //   Serial.print("HTTP Response code: ");
- //   Serial.println(httpResponseCode2);
- //   String payload = http.getString();
- //   Serial.println(payload);
- // }
- // else {
- //   Serial.print("Error code: ");
- //   Serial.println(httpResponseCode2);
- // }
+  //GET Code =======================================================================
+  int httpResponseCodeGet = httpGet.GET();
+      
+  if (httpResponseCodeGet>0) {
+    Serial.print("HTTP Response code: ");
+    Serial.println(httpResponseCodeGet);
+    String payload = httpGet.getString();
+    Serial.println(payload);
+  }
+  else {
+    Serial.print("Error code: ");
+    Serial.println(httpResponseCodeGet);
+  }
+
   // Free resources
-  http.end();
+  httpPOST.end();
+  httpGet.end();
 
   delay(5000);  // Wait for 5 seconds before sending the next request
 }
