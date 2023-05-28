@@ -13,7 +13,7 @@ function App() {
 
   const fetchNumericalInput = async () => {
     // Simulating server request
-    const response = await fetch("http://localhost:3001/numericalInput");
+    const response = await fetch("http://18.134.98.192:3001/numericalInput");
     const data = await response.json();
     return data;
   };
@@ -23,7 +23,7 @@ function App() {
   };
 
   const handleButtonClick = async (direction) => {
-    await fetch("http://localhost:3001/buttonClick", {
+    await fetch("http://18.134.98.192:3001/buttonClickPost", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
