@@ -1,6 +1,11 @@
 .App {
   text-align: center;
+  background-image: url("Maze.webp");
+  background-size: 100% 100%; /* Adjust the values as needed */
+  background-repeat: no-repeat;
+  background-position: center;
 }
+
 
 .App-logo {
   height: 40vmin;
@@ -27,6 +32,58 @@
 .App-link {
   color: #61dafb;
 }
+/* App.css */
+
+/* Styles for the maze display */
+.maze-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center horizontally */
+  justify-content: center; /* Center vertically */
+  margin-top: 50px; /* Adjust the top margin as needed */
+}
+
+.maze-row {
+  display: flex;
+}
+
+.maze-cell {
+  width: 10px;
+  height: 10px;
+  border: 1px solid black;
+}
+
+/* Styles for the wall and path cells */
+.maze-cell.wall {
+  background-color: black;
+}
+
+.maze-cell.path {
+  background-color: white;
+}
+
+/* Other styles for the app */
+.title {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.input-container {
+  margin-bottom: 20px;
+}
+
+.button-container {
+  margin-top: 20px;
+}
+
+.button {
+  margin-right: 10px;
+}
+
+.mode-container {
+  margin-top: 20px;
+}
+
 
 @keyframes App-logo-spin {
   from {

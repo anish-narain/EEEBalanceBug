@@ -3,6 +3,7 @@ import "./App.css";
 
 function App() {
   const [inputValue, setInputValue] = useState("");
+  const [manualMode, setManualMode] = useState(false); // New state variable for manual mode
 
   useEffect(() => {
     // Simulating server request to retrieve numerical input
@@ -13,7 +14,7 @@ function App() {
 
   const fetchNumericalInput = async () => {
     // Simulating server request
-    const response = await fetch("http://18.134.98.192:3001/numericalInput");
+    const response = await fetch("http://localhost:3001/numericalInput");
     const data = await response.json();
     return data;
   };
@@ -23,7 +24,7 @@ function App() {
   };
 
   const handleButtonClick = async (direction) => {
-    await fetch("http://18.134.98.192:3001/buttonClickPost", {
+    await fetch("http://localhost:3001/buttonClick", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -33,24 +34,86 @@ function App() {
     // Handle the response from the server if needed
   };
 
+  const MazeDisplay = () => {
+    const maze = [
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
+    ];
+    
+
+    return (
+      <div className="maze-display">
+        {maze.map((row, rowIndex) => (
+          <div key={rowIndex} className="maze-row">
+            {row.map((cell, columnIndex) => (
+              <div
+                key={columnIndex}
+                className={`maze-cell ${cell === 1 ? "wall" : "path"}`}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const handleModeChange = () => {
+    setManualMode(!manualMode);
+  };
+
   return (
     <div className="App">
-      <p>This text is printed inside the App component</p>
+      <h1 className="title">EE Maze Mapper!</h1>
+      <p>Current Rover coordinates:</p>
       <div className="input-container">
         <input type="number" value={inputValue} onChange={handleInputChange} />
       </div>
+      <MazeDisplay /> {/* Include the maze display component */}
       <div className="button-container">
-        <button onClick={() => handleButtonClick("Up")}>Up</button>
-        <button onClick={() => handleButtonClick("Down")}>Down</button>
-        <button onClick={() => handleButtonClick("Left")}>Left</button>
-        <button onClick={() => handleButtonClick("Right")}>Right</button>
+        {manualMode && (
+          <>
+            <button onClick={() => handleButtonClick("Up")} className="button">
+              Up
+            </button>
+            <button onClick={() => handleButtonClick("Down")} className="button">
+              Down
+            </button>
+            <button onClick={() => handleButtonClick("Left")} className="button">
+              Left
+            </button>
+            <button onClick={() => handleButtonClick("Right")} className="button">
+              Right
+            </button>
+          </>
+        )}
+      </div>
+      <div className="mode-container">
+        <button onClick={handleModeChange} style={{ marginTop: "20px" }}>
+          {manualMode ? "Switch to Automatic Mode" : "Switch to Manual Mode"}
+        </button>
       </div>
     </div>
   );
 }
 
 export default App;
-
-
-
-
