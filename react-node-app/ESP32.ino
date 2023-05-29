@@ -25,7 +25,7 @@ void loop() {
 
   
   // Create a JSON payload with the button click direction
-  String coordinates = "some_coordinates";
+  String coordinates = "(1, 1)";
   String jsonPayload = "{\"coordinates\":\"" + coordinates + "\"}";
 
   //GET AND POST ENDPOINTS SETUP =================================================
@@ -36,7 +36,7 @@ void loop() {
   httpPOST.begin(PostEndpoint);  // Specify the server address, port, and endpoint
   httpPOST.addHeader("Content-Type", "application/json");
 
-  String GetEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/numericalInputESP";
+  String GetEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirection";
   httpGet.begin(GetEndpoint);  // Specify the server address and endpoint
   
   //POST Code =====================================================================
@@ -72,5 +72,5 @@ void loop() {
   httpPOST.end();
   httpGet.end();
 
-  delay(5000);  // Wait for 5 seconds before sending the next request
+  delay(1000);  // Wait for 5 seconds before sending the next request
 }
