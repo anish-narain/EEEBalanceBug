@@ -32,7 +32,7 @@ void loop() {
   HTTPClient httpPOST;
   HTTPClient httpGet;
   
-  String PostEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/roverCoordinatePost"
+  String PostEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/roverCoordinatePost";
   httpPOST.begin(PostEndpoint);  // Specify the server address, port, and endpoint
   httpPOST.addHeader("Content-Type", "application/json");
 
