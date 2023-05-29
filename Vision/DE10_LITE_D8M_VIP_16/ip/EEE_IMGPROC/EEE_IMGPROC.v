@@ -95,18 +95,19 @@ assign detect_area_high  = red_detect ? {8'hff, 8'h0, 8'h0} :
 
 // Show bounding box
 wire [23:0] new_image;
-wire redbb_active, bluebb_active, yellowbb_active;
+wire redbb_active, bluebb_active, yellowbb_active, whitebb_active;
 assign redbb_active = (x == r_left) | (x == r_right) | (y == r_top) | (y == r_bottom);
 assign bluebb_active = (x == b_left) | (x == b_right) | (y == b_top) | (y == b_bottom);
 assign yellowbb_active = (x == y_left) | (x == y_right) | (y == y_top) | (y == y_bottom);
-assign new_image = redbb_active ? {8'd153, 8'd0, 8'd0} : bluebb_active ? {8'd0, 8'd153, 8'd0} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
+assign whitebb_active = (x == w_left & y > w_left_upper) | (x == w_right & y > w_right_upper) | (y == w_left_upper & x < w_left) | (y == w_right_upper & x > w_right) | (y == w_bottom & x>11'd240 & x<11'd400);
+assign new_image = whitebb_active ? {8'd0, 8'd153, 8'd0} : redbb_active ? {8'd153, 8'd0, 8'd0} : bluebb_active ? {8'd0, 8'd0, 8'd153} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
 
 // Switch output pixels depending on mode switch
 // Don't modify the start-of-packet word - it's a packet discriptor
 // Don't modify data in non-video packets
 assign {red_out, green_out, blue_out} = (mode & ~sop & packet_video) ? new_image : {red,green,blue};
 
-//Count valid pixels to tget the image coordinates. Reset and detect packet type on Start of Packet.
+//Count valid pixels to get the image coordinates. Reset and detect packet type on Start of Packet.
 reg [10:0] x, y;
 reg packet_video;
 always@(posedge clk) begin
@@ -158,11 +159,41 @@ always@(posedge clk) begin
    end
 end
 
+//For collision prevention, must detect white pixels in middle region of the image
+reg [10:0] w_y_max, w_l_x_max, w_l_y_min, w_r_x_min, w_r_y_min;
+
+always@(posedge clk) begin
+	if (white_detect & in_valid) begin
+		if (x>11'd240 & x<11'd400) w_y_max <= y;
+		else if (x<11'd240) begin
+			w_l_x_max <= (x > w_l_x_max) ? x : w_l_x_max;
+			w_l_y_min <= (y < w_l_y_min) ? y : w_l_y_min;
+		end
+		else begin 
+			w_r_x_min <= (x < w_r_x_min) ? x : w_r_x_min;
+			w_r_y_min <= (y < w_r_y_min) ? y : w_r_y_min; 
+		end
+	end
+	
+	if (sop & in_valid) begin
+		w_y_max <= 11'h0;
+		w_l_y_min <= IMAGE_H-11'h1;
+		w_r_y_min <= IMAGE_H-11'h1;
+		w_r_x_min <= IMAGE_W-11'h1;
+		w_l_x_max <= 11'h0;
+	end
+	
+end
+
+//WALL DETECTION: detection of walls to the sides of the rover not in front of it
+
+
 //Process bounding box at the end of the frame.
 reg [2:0] msg_state;
 reg [10:0] r_left, r_right, r_top, r_bottom;
 reg [10:0] b_left, b_right, b_top, b_bottom;
 reg [10:0] y_left, y_right, y_top, y_bottom;
+reg [10:0] w_bottom, w_left, w_left_upper, w_right, w_right_upper;
 reg [7:0] frame_count;
 always@(posedge clk) begin
 	if (eop & in_valid & packet_video) begin  //Ignore non-video packets
@@ -183,7 +214,12 @@ always@(posedge clk) begin
 		y_top <= y_y_min;
 		y_bottom <= y_y_max;
 		
-				
+		w_bottom <= w_y_max;
+		w_left <= w_l_x_max;
+		w_right <= w_r_x_min;
+		w_left_upper <= w_l_y_min;
+		w_right_upper <= w_r_y_min;
+		
 		//Start message writer FSM once every MSG_INTERVAL frames, if there is room in the FIFO
 		frame_count <= frame_count - 1;
 		
