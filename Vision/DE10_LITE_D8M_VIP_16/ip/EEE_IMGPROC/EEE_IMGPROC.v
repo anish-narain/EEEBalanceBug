@@ -132,6 +132,7 @@ reg [10:0] r_x_min, r_y_min, r_x_max, r_y_max;
 reg [10:0] b_x_min, b_y_min, b_x_max, b_y_max;
 reg [10:0] y_x_min, y_y_min, y_x_max, y_y_max;
 
+
 always@(posedge clk) begin
 	if (red_detect & in_valid) begin	//Update bounds when the pixel is red
 		if (x < r_x_min) r_x_min <= x;
@@ -160,10 +161,28 @@ always@(posedge clk) begin
 end
 
 //For collision prevention, must detect white pixels in middle region of the image
-reg [10:0] w_y_max, w_l_x_max, w_l_y_min, w_r_x_min, w_r_y_min;
+reg [10:0] w_y_max, w_l_x_max, w_l_y_min, w_r_x_min, w_r_y_min, w_detect_x_max;
+reg [10:0] max_error;
+wire signed [10:0] t0;
+wire [10:0] t1;
+
+//assign t0 = x - 11'd120; //tune for desired controller, make absolute
+//assign t1 = (t0 < 0) ? (~t0+1) : t0;
+
 
 always@(posedge clk) begin
+	//x_error <=  11'h7FF;
+
 	if (white_detect & in_valid) begin
+
+		if (y == 11'd240 & x < 11'd240) begin
+			//t0 <= x - 11'd120; //tune for desired controller, make absolute
+			//t1 <=  (t0 < 0) ? (~t0+1) : t0;
+			//max_error <= (t1 > max_error) ? t0 : max_error;
+			w_detect_x_max <= x;
+
+		end
+		
 		if (x>11'd240 & x<11'd400) w_y_max <= y;
 		else if (x<11'd240) begin
 			w_l_x_max <= (x > w_l_x_max) ? x : w_l_x_max;
@@ -181,6 +200,7 @@ always@(posedge clk) begin
 		w_r_y_min <= IMAGE_H-11'h1;
 		w_r_x_min <= IMAGE_W-11'h1;
 		w_l_x_max <= 11'h0;
+		w_detect_x_max <= 11'd120;
 	end
 	
 end
@@ -189,11 +209,12 @@ end
 
 
 //Process bounding box at the end of the frame.
-reg [2:0] msg_state;
+reg [3:0] msg_state;
 reg [10:0] r_left, r_right, r_top, r_bottom;
 reg [10:0] b_left, b_right, b_top, b_bottom;
 reg [10:0] y_left, y_right, y_top, y_bottom;
 reg [10:0] w_bottom, w_left, w_left_upper, w_right, w_right_upper;
+reg signed [10:0] x_error;
 reg [7:0] frame_count;
 always@(posedge clk) begin
 	if (eop & in_valid & packet_video) begin  //Ignore non-video packets
@@ -220,20 +241,22 @@ always@(posedge clk) begin
 		w_left_upper <= w_l_y_min;
 		w_right_upper <= w_r_y_min;
 		
+		x_error <= w_detect_x_max - 11'd120;
+		
 		//Start message writer FSM once every MSG_INTERVAL frames, if there is room in the FIFO
 		frame_count <= frame_count - 1;
 		
 		if (frame_count == 0 && msg_buf_size < MESSAGE_BUF_MAX - 3) begin
-			msg_state <= 3'b001;
+			msg_state <= 4'b0001;
 			frame_count <= MSG_INTERVAL-1;
 		end
 	end
 	
 	//Cycle through message writer states once started
-	if (msg_state != 3'b000)
+	if (msg_state != 4'b0000)
 		begin
-			if (msg_state == 3'b111)  msg_state <= 3'b000;
-			else msg_state <= msg_state + 3'b001;
+			if (msg_state == 4'b1000)  msg_state <= 4'b0000;
+			else msg_state <= msg_state + 4'b0001;
 		end
 
 end
@@ -254,39 +277,42 @@ wire msg_buf_empty;
 
 always@(*) begin	//Write words to FIFO as state machine advances
 	case(msg_state)
-		3'b000: begin
+		4'b000: begin
 			msg_buf_in = 32'b0;
 			msg_buf_wr = 1'b0;
 		end
-		3'b001: begin
+		4'b001: begin
 			msg_buf_in = `START_MSG_ID;	//Message ID
 			msg_buf_wr = 1'b1;
 		end
-		3'b010: begin
+		4'b010: begin
 			msg_buf_in = {5'b0, r_x_min, 5'b0, r_y_min};	//Top left coordinate - RED
 			msg_buf_wr = 1'b1;
 		end
-		3'b011: begin
+		4'b011: begin
 			msg_buf_in = {5'b0, r_x_max, 5'b0, r_y_max}; //Bottom right coordinate - RED
 			msg_buf_wr = 1'b1;
 		end
 
-		3'b100: begin
+		4'b100: begin
 			msg_buf_in = {5'b0, b_x_min, 5'b0, b_y_min};	//Top left coordinate - BLUE
 			msg_buf_wr = 1'b1;
 		end
-		3'b101: begin
+		4'b101: begin
 			msg_buf_in = {5'b0, b_x_max, 5'b0, b_y_max}; //Bottom right coordinate - BLUE
 			msg_buf_wr = 1'b1;
 		end
 		
-		3'b110: begin
+		4'b110: begin
 			msg_buf_in = {5'b0, y_x_min, 5'b0, y_y_min};	//Top left coordinate - YELLOW
 			msg_buf_wr = 1'b1;
 		end
-		3'b111: begin
+		4'b111: begin
 			msg_buf_in = {5'b0, y_x_max, 5'b0, y_y_max}; //Bottom right coordinate - YELLOW
 			msg_buf_wr = 1'b1;
+		end
+		4'b1000: begin
+			msg_buf_in = {21'b0, x_error};
 		end
 		
 	endcase
@@ -400,4 +426,3 @@ assign msg_buf_rd = s_chipselect & s_read & ~read_d & ~msg_buf_empty & (s_addres
 
 
 endmodule
-
