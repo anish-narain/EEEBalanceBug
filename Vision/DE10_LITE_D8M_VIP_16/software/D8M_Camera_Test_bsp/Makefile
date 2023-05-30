@@ -101,7 +101,7 @@ ACDS_VERSION := 18.1
 # BUILD_NUMBER: 625
 
 SETTINGS_FILE := settings.bsp
-SOPC_FILE := ../../Qsys.sopcinfo
+SOPC_FILE := C:/Users/andre/summer_project_2023/EEEBalanceBug/Vision/DE10_LITE_D8M_VIP_16/Qsys.sopcinfo
 
 #-------------------------------------------------------------------------------
 #                             TOOL & COMMAND DEFINITIONS

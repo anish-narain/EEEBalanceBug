@@ -10,6 +10,7 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 
 //EEE_IMGPROC defines
 #define EEE_IMGPROC_MSG_START ('R'<<16 | 'B'<<8 | 'B')
@@ -42,6 +43,8 @@
 #define MIPI_REG_MDLSynErr		0x0068
 #define MIPI_REG_FrmErrCnt		0x0080
 #define MIPI_REG_MDLErrCnt		0x0090
+
+#define width_30 72000
 
 void mipi_clear_error(void){
 	MipiBridgeRegWrite(MIPI_REG_CSIStatus,0x01FF); // clear error
@@ -120,6 +123,14 @@ bool MIPI_Init(void){
 	return bSuccess;
 }
 
+void beacon_dist(int min, int max) {
+	int w, dist;
+
+	w = (max - min)*1000;
+	dist = (w/width_30) * 300;
+
+	printf("distance to beacon = %d\n", dist);
+}
 
 
 
@@ -260,15 +271,29 @@ int main()
        }
 	#endif
 
+       int words[8];
+       int i = 0;
+
        //Read messages from the image processor and print them on the terminal
        while ((IORD(0x42000,EEE_IMGPROC_STATUS)>>8) & 0xff) { 	//Find out if there are words to read
-           int word = IORD(0x42000,EEE_IMGPROC_MSG); 			//Get next word from message buffer
+           int word = IORD(0x42000,EEE_IMGPROC_MSG); //Get next word from message buffer
+
     	   if (fwrite(&word, 4, 1, ser) != 1)
     		   printf("Error writing to UART");
-           if (word == EEE_IMGPROC_MSG_START)				//Newline on message identifier
+           if (word == EEE_IMGPROC_MSG_START) {				//Newline on message identifier
+        	   beacon_dist(words[5]>>16, words[6]>>16);
     		   printf("\n");
+           	   i = 0;
+           }
+           words[i] = word;
+           i++;
     	   printf("%08x ",word);
+
        }
+
+
+
+
 
        //Update the bounding box colour
        boundingBoxColour = ((boundingBoxColour + 1) & 0xff);

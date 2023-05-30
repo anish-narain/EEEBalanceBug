@@ -2,9 +2,9 @@
  * alt_sys_init.c - HAL initialization source
  *
  * Machine generated for CPU 'nios2_gen2' in SOPC Builder design 'Qsys'
- * SOPC Builder design path: ../../Qsys.sopcinfo
+ * SOPC Builder design path: C:/Users/andre/summer_project_2023/EEEBalanceBug/Vision/DE10_LITE_D8M_VIP_16/Qsys.sopcinfo
  *
- * Generated: Fri May 27 15:08:02 BST 2022
+ * Generated: Tue May 30 10:53:35 BST 2023
  */
 
 /*

@@ -86,7 +86,7 @@ ACDS_VERSION := 18.1
 
 # Qsys--generated SOPCINFO file. Required for resolving node instance ID's with 
 # design component names. 
-SOPCINFO_FILE := $(ABS_BSP_ROOT_DIR)/../../Qsys.sopcinfo
+SOPCINFO_FILE := C:/Users/andre/summer_project_2023/EEEBalanceBug/Vision/DE10_LITE_D8M_VIP_16/Qsys.sopcinfo
 
 # Big-Endian operation. 
 # setting BIG_ENDIAN is false
@@ -157,9 +157,9 @@ SOPC_SYSID_FLAG += --sidp=0x410e0
 ELF_PATCH_FLAG  += --sidp 0x410e0
 
 # The SOPC Timestamp 
-# setting SOPC_TIMESTAMP is 1685106430
-SOPC_SYSID_FLAG += --timestamp=1685106430
-ELF_PATCH_FLAG  += --timestamp 1685106430
+# setting SOPC_TIMESTAMP is 1685377528
+SOPC_SYSID_FLAG += --timestamp=1685377528
+ELF_PATCH_FLAG  += --timestamp 1685377528
 
 # Enable JTAG UART driver to recover when host is inactive causing buffer to 
 # full without returning error. Printf will not fail with this recovery. none 

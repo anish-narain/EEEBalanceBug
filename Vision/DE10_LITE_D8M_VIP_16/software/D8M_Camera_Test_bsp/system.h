@@ -2,9 +2,9 @@
  * system.h - SOPC Builder system and BSP software package information
  *
  * Machine generated for CPU 'nios2_gen2' in SOPC Builder design 'Qsys'
- * SOPC Builder design path: ../../Qsys.sopcinfo
+ * SOPC Builder design path: C:/Users/andre/summer_project_2023/EEEBalanceBug/Vision/DE10_LITE_D8M_VIP_16/Qsys.sopcinfo
  *
- * Generated: Fri May 26 14:15:20 BST 2023
+ * Generated: Tue May 30 10:53:35 BST 2023
  */
 
 /*
@@ -465,7 +465,7 @@
 #define SYSID_QSYS_IRQ_INTERRUPT_CONTROLLER_ID -1
 #define SYSID_QSYS_NAME "/dev/sysid_qsys"
 #define SYSID_QSYS_SPAN 8
-#define SYSID_QSYS_TIMESTAMP 1685106430
+#define SYSID_QSYS_TIMESTAMP 1685377528
 #define SYSID_QSYS_TYPE "altera_avalon_sysid_qsys"
 
 
