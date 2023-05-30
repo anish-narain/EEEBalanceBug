@@ -136,10 +136,10 @@ void beacon_dist(int words[8]) {
 		printf("w_x %d, w_y %d\n", w_x, w_y);
 
 		if( w_x > 100 || w_x < 10 || w_y > 100 || w_y < 10){
-					printf("\t Too small or too big for %s, ERROR!;\n", color[idx]);
+					printf("Too small or too big for %s, ERROR!;\n", color[idx]);
 		}
 		else if (w_x/w_y > 3 || w_y/w_x > 3){
-					fprintf(stderr, "\t Not like a square for %s, ratio ERROR!;\n", color[idx]);
+					fprintf("Not like a square for %s, ratio ERROR!;\n", color[idx]);
 		}
 		else {
 			dist = ((width_30/w_x) * 300) >> 10;
