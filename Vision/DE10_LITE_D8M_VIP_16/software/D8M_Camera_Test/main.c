@@ -27,8 +27,9 @@
 #define GAIN_STEP 0x040
 #define DEFAULT_LEVEL 3
 
-#define RGB_GAIN_INIT 0x400
+#define RED_GAIN_INIT 0x400
 #define GREEN_Gain_INIT 0x540
+#define BLUE_GAIN_INIT 0x310
 #define RGB_STEP 0x50
 
 #define MIPI_REG_PHYClkCtl		0x0056
@@ -123,13 +124,36 @@ bool MIPI_Init(void){
 	return bSuccess;
 }
 
-void beacon_dist(int min, int max) {
-	int w, dist;
+void beacon_dist(int words[8]) {
+	int w_x;
+	int dist;
+	char *color[] = {"Red", "Blue", "Yellow"};
+	int w_y, idx;
+	idx = 0;
+	for (int i = 1; i < 7; i+=2){
+		w_x = ((words[i + 1] >> 16) - (words[i] >> 16)) & 0xFFFF;
+		w_y = ((words[i + 1] & 0xFFFF) - (words[i] & 0xFFFF)) & 0xFFFF;
+		printf("w_x %d, w_y %d\n", w_x, w_y);
 
-	w = (max - min);
-	dist = ((width_30/w) * 300) >> 10;
+		if( w_x > 100 || w_x < 10 || w_y > 100 || w_y < 10){
+					printf("\t Too small or too big for %s, ERROR!;\n", color[idx]);
+		}
+		else if (w_x/w_y > 3 || w_y/w_x > 3){
+					fprintf(stderr, "\t Not like a square for %s, ratio ERROR!;\n", color[idx]);
+		}
+		else {
+			dist = ((width_30/w_x) * 300) >> 10;
+			printf("distance to beacon %s = %d\n", color[idx], dist);
+		}
 
-	printf("min = %d, max = %d, w = %d, distance to beacon = %d\n", min, max, w, dist);
+		idx += 1;
+
+		//dist_r = ((width_30/w_r_x) * 300) >> 10;
+		//dist_b = ((width_30/w_b_x) * 300) >> 10;
+		//dist_y = ((width_30/w_y_x) * 300) >> 10;
+
+
+	}
 }
 
 
@@ -203,9 +227,9 @@ int main()
     	int boundingBoxColour = 0;
     	alt_u32 exposureTime = EXPOSURE_INIT;
     	alt_u16 gain = GAIN_INIT;
-    	alt_u16 RedGain = RGB_GAIN_INIT;
+    	alt_u16 RedGain = RED_GAIN_INIT;
     	alt_u16 GreenGain = GREEN_Gain_INIT;
-    	alt_u16 BlueGain = RGB_GAIN_INIT;
+    	alt_u16 BlueGain = BLUE_GAIN_INIT;
 
 
         OV8865SetExposure(exposureTime);
@@ -281,7 +305,8 @@ int main()
     	   if (fwrite(&word, 4, 1, ser) != 1)
     		   printf("Error writing to UART");
            if (word == EEE_IMGPROC_MSG_START) {				//Newline on message identifier
-        	   beacon_dist(words[5]>>16, words[6]>>16);
+        	   printf("\n");
+        	   beacon_dist(words);
     		   printf("\n");
            	   i = 0;
            }
