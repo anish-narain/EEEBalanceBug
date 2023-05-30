@@ -44,7 +44,7 @@
 #define MIPI_REG_FrmErrCnt		0x0080
 #define MIPI_REG_MDLErrCnt		0x0090
 
-#define width_30 72000
+#define width_30 73728
 
 void mipi_clear_error(void){
 	MipiBridgeRegWrite(MIPI_REG_CSIStatus,0x01FF); // clear error
@@ -126,10 +126,10 @@ bool MIPI_Init(void){
 void beacon_dist(int min, int max) {
 	int w, dist;
 
-	w = (max - min)*1000;
-	dist = (w/width_30) * 300;
+	w = (max - min);
+	dist = ((width_30/w) * 300) >> 10;
 
-	printf("distance to beacon = %d\n", dist);
+	printf("min = %d, max = %d, w = %d, distance to beacon = %d\n", min, max, w, dist);
 }
 
 
