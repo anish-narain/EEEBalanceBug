@@ -1,37 +1,53 @@
-import React, { useState, useEffect } from "react";
-import "./App.css";
+import React, { useState, useEffect } from 'react';
+import './App.css';
 
 function App() {
-  const [inputValue, setInputValue] = useState("");
-  const [manualMode, setManualMode] = useState(false); // New state variable for manual mode
+  const [roverCoordinates, setRoverCoordinates] = useState(null);
+  const [manualMode, setManualMode] = useState(false);
+  const [mode, setMode] = useState('manual');
 
   useEffect(() => {
-    // Simulating server request to retrieve numerical input
-    fetchNumericalInput().then((data) => {
-      setInputValue(data.numericalInput);
+    fetchRoverCoordinates().then((data) => {
+      setRoverCoordinates(data.roverCoordinates);
     });
   }, []);
 
-  const fetchNumericalInput = async () => {
-    // Simulating server request
-    const response = await fetch("http://localhost:3001/numericalInput");
+  useEffect(() => {
+    fetch('http://18.134.98.192:3001/setManualMode', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ mode }),
+    })
+      .then((response) => {
+        // Handle the response from the server if needed
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
+  }, [mode]);
+
+  const fetchRoverCoordinates = async () => {
+    const response = await fetch('http://18.134.98.192:3001/roverCoordinates');
     const data = await response.json();
     return data;
   };
 
-  const handleInputChange = (event) => {
-    setInputValue(event.target.value);
-  };
-
-  const handleButtonClick = async (direction) => {
-    await fetch("http://localhost:3001/buttonClickPost", {
-      method: "POST",
+  const handleMvmtClick = async (direction) => {
+    await fetch('http://18.134.98.192:3001/mvmtClickPost', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ direction }),
     });
     // Handle the response from the server if needed
+  };
+
+  const handleModeChange = () => {
+    setMode(manualMode ? 'automatic' : 'manual');
+    setManualMode(!manualMode);
   };
 
   const MazeDisplay = () => {
@@ -59,7 +75,6 @@ function App() {
       [1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
       [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1],
     ];
-    
 
     return (
       <div className="maze-display">
@@ -77,39 +92,32 @@ function App() {
     );
   };
 
-  const handleModeChange = () => {
-    setManualMode(!manualMode);
-  };
-
   return (
     <div className="App">
       <h1 className="title">EE Maze Mapper!</h1>
-      <p>Current Rover coordinates:</p>
-      <div className="input-container">
-        <input type="number" value={inputValue} onChange={handleInputChange} />
-      </div>
+      <p>Current Rover coordinates: {roverCoordinates}</p>
       <MazeDisplay /> {/* Include the maze display component */}
       <div className="button-container">
         {manualMode && (
           <>
-            <button onClick={() => handleButtonClick("Up")} className="button">
+            <button onClick={() => handleMvmtClick('Up')} className="button">
               Up
             </button>
-            <button onClick={() => handleButtonClick("Down")} className="button">
+            <button onClick={() => handleMvmtClick('Down')} className="button">
               Down
             </button>
-            <button onClick={() => handleButtonClick("Left")} className="button">
+            <button onClick={() => handleMvmtClick('Left')} className="button">
               Left
             </button>
-            <button onClick={() => handleButtonClick("Right")} className="button">
+            <button onClick={() => handleMvmtClick('Right')} className="button">
               Right
             </button>
           </>
         )}
       </div>
       <div className="mode-container">
-        <button onClick={handleModeChange} style={{ marginTop: "20px" }}>
-          {manualMode ? "Switch to Automatic Mode" : "Switch to Manual Mode"}
+        <button onClick={handleModeChange} style={{ marginTop: '20px' }}>
+          {manualMode ? 'Switch to Automatic Mode' : 'Switch to Manual Mode'}
         </button>
       </div>
     </div>
