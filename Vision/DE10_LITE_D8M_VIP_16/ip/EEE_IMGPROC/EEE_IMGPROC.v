@@ -93,13 +93,22 @@ wire red_detect, blue_detect, yellow_detect, white_detect;
 //assign yellow_detect = (red > 8'd150) & (green > 8'd150) & (blue < 8'd100);
 //assign white_detect= (red > 8'd200) & (green > 8'd200) & (blue > 8'd200);
 
-assign red_detect = (H > 8'd0 & H < 8'd12) & (S > 8'd50) & (V > 8'd150);
-assign yellow_detect = (H > 8'd16 & H < 8'd35) & (S > 8'd50) & (V > 8'd150);
-assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd50) & (V > 8'd50);
+//assign red_detect = (H > 8'd0 & H < 8'd12) & (S > 8'd50) & (V > 8'd150);
+//assign yellow_detect = (H > 8'd16 & H < 8'd35) & (S > 8'd50) & (V > 8'd150);
+//assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd50) & (V > 8'd50);
 
 //assign red_detect = (H > 8'd0 & H < 8'd10) & (S > 8'd120) & (V > 8'd150);
 //assign yellow_detect = (H > 8'd20 & H < 8'd35) & (S > 8'd30) & (V > 8'd200);
 //assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd150);
+
+//assign red_detect = (H > 8'd0 & H < 8'd10) & (S > 8'd120) & (V > 8'd150);
+//assign yellow_detect = (H > 8'd10 & H < 8'd40) & (S > 8'd100) & (V > 8'd50);
+//assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd50);
+
+assign red_detect = (H > 8'd0 & H < 8'd10) & (S > 8'd120) & (V > 8'd50);
+assign yellow_detect = (H > 8'd10 & H < 8'd40) & (S > 8'd100) & (V > 8'd50);
+assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd50);
+
 
 //assign white_detect = (S <= 8'd4) & (V >= 8'd4);
 assign white_detect = 1'b0;
@@ -153,30 +162,72 @@ reg [10:0] r_x_min, r_y_min, r_x_max, r_y_max;
 reg [10:0] b_x_min, b_y_min, b_x_max, b_y_max;
 reg [10:0] y_x_min, y_y_min, y_x_max, y_y_max;
 
+reg [3:0] red_count, blue_count, yellow_count;
+
+
 
 always@(posedge clk) begin
 	if (red_detect & in_valid) begin	//Update bounds when the pixel is red
-		if (x < r_x_min) r_x_min <= x;
-		if (x > r_x_max) r_x_max <= x;
-		if (y < r_y_min) r_y_min <= y;
-		r_y_max <= y;
+		
+		
+		if (red_count == 4'b1111) begin
+				if (r_x_min > x-11'b1111) r_x_min <= x-11'b1111;
+				if (r_x_max < x) r_x_max <= x;
+				if (y < r_y_min) r_y_min <= y;
+				r_y_max <= y;		
+			end else begin
+				red_count <= red_count + 1; // 
+			end
+			
+		blue_count <= 4'b0;
+		yellow_count <= 4'b0;
+		
 	end
 	else if (blue_detect & in_valid) begin	//Update bounds when the pixel is red
-		if (x < b_x_min) b_x_min <= x;
-		if (x > b_x_max) b_x_max <= x;
-		if (y < b_y_min) b_y_min <= y;
-		b_y_max <= y;
+
+		if (blue_count == 4'b111) begin
+				if (b_x_min > x-11'b111) b_x_min <= x-11'b111;
+				if (b_x_max < x) b_x_max <= x; 
+				if (y < b_y_min) b_y_min <= y;
+				b_y_max <= y;	
+			end else begin
+				blue_count <= blue_count + 1; // 
+			end
+		
+	
+		
+		red_count <= 4'b0;
+		yellow_count <= 4'b0;
 	end
 	else if (yellow_detect & in_valid) begin	//Update bounds when the pixel is red
-		if (x < y_x_min) y_x_min <= x;
-		if (x > y_x_max) y_x_max <= x;
-		if (y < y_y_min) y_y_min <= y;
-		y_y_max <= y;
+		if (yellow_count == 4'b1111) begin
+				if (y_x_min > x-11'b1111) y_x_min <= x-11'b1111;
+				if (y_x_max < x) y_x_max <= x;  
+				if (y < y_y_min) y_y_min <= y;
+				y_y_max <= y;
+			end else begin
+				yellow_count <= yellow_count + 1; // 
+			end
+		
+		red_count <= 4'b0;
+		blue_count <= 4'b0;
 	end
+	
+	else if (in_valid) begin
+		red_count <= 4'b0;
+		blue_count <= 4'b0;
+		yellow_count <= 4'b0;
+	end
+	
+	//else red_count <= 3'b0;
+	
 	if (sop & in_valid) begin	//Reset bounds on start of packet
       r_x_min  <= IMAGE_W-11'h1; r_x_max  <= 0;	r_y_min  <= IMAGE_H-11'h1;	r_y_max <= 0;
 		b_x_min  <= IMAGE_W-11'h1;	b_x_max  <= 0;	b_y_min  <= IMAGE_H-11'h1;	b_y_max <= 0;
 		y_x_min  <= IMAGE_W-11'h1;	y_x_max  <= 0;	y_y_min  <= IMAGE_H-11'h1;	y_y_max <= 0;
+		red_count <= 4'b000;
+		blue_count <= 4'b000;
+		yellow_count <= 4'b000;
 			
    end
 end

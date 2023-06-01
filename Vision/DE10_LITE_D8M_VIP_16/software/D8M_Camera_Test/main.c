@@ -26,8 +26,9 @@
 #define GAIN_INIT 0x000
 #define GAIN_STEP 0x040
 #define DEFAULT_LEVEL 3
+#define FOCUS_INIT 0x200
 
-#define RED_GAIN_INIT 0x540
+#define RED_GAIN_INIT 0x400
 #define GREEN_Gain_INIT 0x450
 #define BLUE_GAIN_INIT 0x400
 #define RGB_STEP 0x50
@@ -222,20 +223,23 @@ int main()
 
 
     //////////////////////////////////////////////////////////
-        alt_u16 bin_level = DEFAULT_LEVEL;
-        alt_u8  manual_focus_step = 10;
-        alt_u16  current_focus = 300;
-    	int boundingBoxColour = 0;
-    	alt_u32 exposureTime = EXPOSURE_INIT;
-    	alt_u16 gain = GAIN_INIT;
-    	alt_u16 RedGain = RED_GAIN_INIT;
-    	alt_u16 GreenGain = GREEN_Gain_INIT;
-    	alt_u16 BlueGain = BLUE_GAIN_INIT;
+ 	 	alt_u32 exposureTime = EXPOSURE_INIT;
+ 	 	alt_u16 gain = GAIN_INIT;
 
 
         OV8865SetExposure(exposureTime);
         OV8865SetGain(gain);
-        Focus_Init();
+        //Focus_Init();
+
+        alt_u16 bin_level = DEFAULT_LEVEL;
+        alt_u8  manual_focus_step = 10;
+        alt_u16  current_focus = FOCUS_INIT;
+        int boundingBoxColour = 0;
+
+        alt_u16 RedGain = RED_GAIN_INIT;
+        alt_u16 GreenGain = GREEN_Gain_INIT;
+        alt_u16 BlueGain = BLUE_GAIN_INIT;
+
 
         FILE* ser = fopen("/dev/uart_0", "rb+");
         if(ser){
@@ -250,7 +254,8 @@ int main()
        // touch KEY0 to trigger Auto focus
 	   if((IORD(KEY_BASE,0)&0x03) == 0x02){
 
-    	   current_focus = Focus_Window(320,240);
+    	   //current_focus = Focus_Window(320,240)
+		   current_focus = FOCUS_INIT;
        }
 	   // touch KEY1 to ZOOM
 	         if((IORD(KEY_BASE,0)&0x03) == 0x01){
