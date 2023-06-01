@@ -76,12 +76,33 @@ wire [7:0]   red_out, green_out, blue_out;
 wire         sop, eop, in_valid, out_ready;
 ////////////////////////////////////////////////////////////////////////
 
+wire [7:0] H, S, V;
+RGB_to_HSV(
+	.R(red),
+	.G(green),
+	.B(blue),
+	.H(H),
+	.S(S),
+	.V(V)
+);
+
 // Detect red areas
 wire red_detect, blue_detect, yellow_detect, white_detect;
-assign red_detect = (red > 8'd120) & (green < 8'd75) & (blue < 8'd100);
-assign blue_detect = (red < 8'd100) & (green < 8'd100) & (blue > 8'd150);
-assign yellow_detect = (red > 8'd150) & (green > 8'd150) & (blue < 8'd100);
-assign white_detect= (red > 8'd200) & (green > 8'd200) & (blue > 8'd200);
+//assign red_detect = (red > 8'd120) & (green < 8'd75) & (blue < 8'd100);
+//assign blue_detect = (red < 8'd100) & (green < 8'd100) & (blue > 8'd150);
+//assign yellow_detect = (red > 8'd150) & (green > 8'd150) & (blue < 8'd100);
+//assign white_detect= (red > 8'd200) & (green > 8'd200) & (blue > 8'd200);
+
+assign red_detect = (H > 8'd0 & H < 8'd12) & (S > 8'd50) & (V > 8'd150);
+assign yellow_detect = (H > 8'd16 & H < 8'd35) & (S > 8'd50) & (V > 8'd150);
+assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd50) & (V > 8'd50);
+
+//assign red_detect = (H > 8'd0 & H < 8'd10) & (S > 8'd120) & (V > 8'd150);
+//assign yellow_detect = (H > 8'd20 & H < 8'd35) & (S > 8'd30) & (V > 8'd200);
+//assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd150);
+
+//assign white_detect = (S <= 8'd4) & (V >= 8'd4);
+assign white_detect = 1'b0;
 
 // Find boundary of cursor box
 
@@ -317,7 +338,6 @@ always@(*) begin	//Write words to FIFO as state machine advances
 		
 	endcase
 end
-
 
 //Output message FIFO
 MSG_FIFO	MSG_FIFO_inst (

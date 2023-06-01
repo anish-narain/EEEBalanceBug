@@ -21,15 +21,15 @@
 #define EEE_IMGPROC_ID 2
 #define EEE_IMGPROC_BBCOL 3
 
-#define EXPOSURE_INIT 0x000700
+#define EXPOSURE_INIT 0x000500
 #define EXPOSURE_STEP 0x100
-#define GAIN_INIT 0x080
+#define GAIN_INIT 0x000
 #define GAIN_STEP 0x040
 #define DEFAULT_LEVEL 3
 
-#define RED_GAIN_INIT 0x400
-#define GREEN_Gain_INIT 0x540
-#define BLUE_GAIN_INIT 0x310
+#define RED_GAIN_INIT 0x540
+#define GREEN_Gain_INIT 0x450
+#define BLUE_GAIN_INIT 0x400
 #define RGB_STEP 0x50
 
 #define MIPI_REG_PHYClkCtl		0x0056
@@ -46,6 +46,7 @@
 #define MIPI_REG_MDLErrCnt		0x0090
 
 #define width_30 73728
+#define height_30 78848
 
 void mipi_clear_error(void){
 	MipiBridgeRegWrite(MIPI_REG_CSIStatus,0x01FF); // clear error
