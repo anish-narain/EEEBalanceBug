@@ -105,13 +105,18 @@ wire red_detect, blue_detect, yellow_detect, white_detect;
 //assign yellow_detect = (H > 8'd10 & H < 8'd40) & (S > 8'd100) & (V > 8'd50);
 //assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd50);
 
+//assign red_detect = (H > 8'd0 & H < 8'd10) & (S > 8'd120) & (V > 8'd50);
+//assign yellow_detect = (H > 8'd10 & H < 8'd40) & (S > 8'd100) & (V > 8'd50);     // perfect one
+//assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd50);
+
 assign red_detect = (H > 8'd0 & H < 8'd10) & (S > 8'd120) & (V > 8'd50);
-assign yellow_detect = (H > 8'd10 & H < 8'd40) & (S > 8'd100) & (V > 8'd50);
+assign yellow_detect = (H > 8'd10 & H < 8'd35) & (S > 8'd100) & (V > 8'd50);
 assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd50);
 
 
 //assign white_detect = (S <= 8'd4) & (V >= 8'd4);
-assign white_detect = 1'b0;
+//assign white_detect = (red > 8'd16 & red < 8'd74) & (green > 8'd25 & green < 8'd84) & (blue > 8'd16 & blue < 8'd49);
+assign white_detect = (red > 8'd35 & red < 8'd140) & (green > 8'd45 & green < 8'd170) & (blue > 8'd18 & blue < 8'd100);
 
 // Find boundary of cursor box
 
@@ -162,7 +167,7 @@ reg [10:0] r_x_min, r_y_min, r_x_max, r_y_max;
 reg [10:0] b_x_min, b_y_min, b_x_max, b_y_max;
 reg [10:0] y_x_min, y_y_min, y_x_max, y_y_max;
 
-reg [3:0] red_count, blue_count, yellow_count;
+reg [3:0] red_count, blue_count, yellow_count, dark_count;
 
 
 
@@ -170,53 +175,59 @@ always@(posedge clk) begin
 	if (red_detect & in_valid) begin	//Update bounds when the pixel is red
 		
 		
-		if (red_count == 4'b1111) begin
-				if (r_x_min > x-11'b1111) r_x_min <= x-11'b1111;
+		if (red_count == 4'b111) begin
+				if (r_x_min > x-11'b111) r_x_min <= x-11'b111;
 				if (r_x_max < x) r_x_max <= x;
 				if (y < r_y_min) r_y_min <= y;
-				r_y_max <= y;		
+				r_y_max <= y;
+				blue_count <= 4'b0;
+				yellow_count <= 4'b0;
 			end else begin
 				red_count <= red_count + 1; // 
 			end
 			
-		blue_count <= 4'b0;
-		yellow_count <= 4'b0;
+		
 		
 	end
 	else if (blue_detect & in_valid) begin	//Update bounds when the pixel is red
 
-		if (blue_count == 4'b111) begin
-				if (b_x_min > x-11'b111) b_x_min <= x-11'b111;
+		if (blue_count == 4'b11) begin
+				if (b_x_min > x-11'b11) b_x_min <= x-11'b11;
 				if (b_x_max < x) b_x_max <= x; 
 				if (y < b_y_min) b_y_min <= y;
 				b_y_max <= y;	
+				red_count <= 4'b0;
+				yellow_count <= 4'b0;
 			end else begin
 				blue_count <= blue_count + 1; // 
 			end
 		
 	
 		
-		red_count <= 4'b0;
-		yellow_count <= 4'b0;
+		
 	end
 	else if (yellow_detect & in_valid) begin	//Update bounds when the pixel is red
-		if (yellow_count == 4'b1111) begin
-				if (y_x_min > x-11'b1111) y_x_min <= x-11'b1111;
+		if (yellow_count == 4'b111) begin
+				if (y_x_min > x-11'b111) y_x_min <= x-11'b111;
 				if (y_x_max < x) y_x_max <= x;  
 				if (y < y_y_min) y_y_min <= y;
 				y_y_max <= y;
+				red_count <= 4'b0;
+				blue_count <= 4'b0;
 			end else begin
 				yellow_count <= yellow_count + 1; // 
 			end
 		
-		red_count <= 4'b0;
-		blue_count <= 4'b0;
+		
 	end
 	
 	else if (in_valid) begin
-		red_count <= 4'b0;
-		blue_count <= 4'b0;
-		yellow_count <= 4'b0;
+		if (dark_count == 4'b111) begin
+			red_count <= 4'b0;
+			blue_count <= 4'b0;
+			yellow_count <= 4'b0;
+		end
+		else dark_count <= dark_count + 1;
 	end
 	
 	//else red_count <= 3'b0;
