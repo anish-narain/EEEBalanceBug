@@ -116,7 +116,7 @@ assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd50);
 
 //assign white_detect = (S <= 8'd4) & (V >= 8'd4);
 //assign white_detect = (red > 8'd16 & red < 8'd74) & (green > 8'd25 & green < 8'd84) & (blue > 8'd16 & blue < 8'd49);
-assign white_detect = (red > 8'd35 & red < 8'd140) & (green > 8'd45 & green < 8'd170) & (blue > 8'd18 & blue < 8'd100);
+assign white_detect = (red > 8'd35 & red < 8'd140) & (green > 8'd45 & green < 8'd170) & (blue > 8'd18 & blue < 8'd100) & y > 11'd260;
 
 // Find boundary of cursor box
 
@@ -258,7 +258,7 @@ always@(posedge clk) begin
 
 	if (white_detect & in_valid) begin
 
-		if (y == 11'd240 & x < 11'd240) begin
+		if (y == 11'd350 & x < 11'd240) begin
 			//t0 <= x - 11'd120; //tune for desired controller, make absolute
 			//t1 <=  (t0 < 0) ? (~t0+1) : t0;
 			//max_error <= (t1 > max_error) ? t0 : max_error;
@@ -297,8 +297,11 @@ reg [10:0] r_left, r_right, r_top, r_bottom;
 reg [10:0] b_left, b_right, b_top, b_bottom;
 reg [10:0] y_left, y_right, y_top, y_bottom;
 reg [10:0] w_bottom, w_left, w_left_upper, w_right, w_right_upper;
-reg signed [10:0] x_error;
+reg [10:0] center_x;
+reg signed [10:0] r_diff_x, b_diff_x, y_diff_x;
+reg signed [10:0] x_error, center_error;
 reg [7:0] frame_count;
+
 always@(posedge clk) begin
 	if (eop & in_valid & packet_video) begin  //Ignore non-video packets
 		
@@ -307,16 +310,19 @@ always@(posedge clk) begin
 		r_right <= r_x_max;
 		r_top <= r_y_min;
 		r_bottom <= r_y_max;
+		r_diff_x <= r_x_max - r_x_min;
 		
 		b_left <= b_x_min;
 		b_right <= b_x_max;
 		b_top <= b_y_min;
 		b_bottom <= b_y_max;
+		b_diff_x <= b_x_max - b_x_min;
 		
 		y_left <= y_x_min;
 		y_right <= y_x_max;
 		y_top <= y_y_min;
 		y_bottom <= y_y_max;
+		y_diff_x <= y_x_max - y_x_min;
 		
 		w_bottom <= w_y_max;
 		w_left <= w_l_x_max;
@@ -325,6 +331,8 @@ always@(posedge clk) begin
 		w_right_upper <= w_r_y_min;
 		
 		x_error <= w_detect_x_max - 11'd120;
+		center_x <= (r_diff_x > b_diff_x & r_diff_x > b_diff_x) ? (r_diff_x/2 + r_x_min):(b_diff_x > y_diff_x) ? (b_diff_x/2 + b_x_min) : (y_diff_x/2 + y_x_min);
+		center_error <= (r_diff_x > b_diff_x & r_diff_x > b_diff_x) ? (r_diff_x/2 + r_x_min - 11'd320):(b_diff_x > y_diff_x) ? (b_diff_x/2 + b_x_min - 11'd320) : (y_diff_x/2 + y_x_min - 11'd320);
 		
 		//Start message writer FSM once every MSG_INTERVAL frames, if there is room in the FIFO
 		frame_count <= frame_count - 1;
@@ -338,7 +346,7 @@ always@(posedge clk) begin
 	//Cycle through message writer states once started
 	if (msg_state != 4'b0000)
 		begin
-			if (msg_state == 4'b1000)  msg_state <= 4'b0000;
+			if (msg_state == 4'b1001)  msg_state <= 4'b0000;
 			else msg_state <= msg_state + 4'b0001;
 		end
 
@@ -396,6 +404,11 @@ always@(*) begin	//Write words to FIFO as state machine advances
 		end
 		4'b1000: begin
 			msg_buf_in = {21'b0, x_error};
+			msg_buf_wr = 1'b1;
+		end
+		4'b1001: begin
+			msg_buf_in = {5'b0, center_x, 5'b0, center_error};
+			msg_buf_wr = 1'b1;
 		end
 		
 	endcase
