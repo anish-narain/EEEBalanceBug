@@ -4,7 +4,7 @@ editor if you plan to continue editing the block that represents it in
 the Block Editor! File corruption is VERY likely to occur.
 */
 /*
-Copyright (C) 2016  Intel Corporation. All rights reserved.
+Copyright (C) 2018  Intel Corporation. All rights reserved.
 Your use of Intel Corporation's design tools, logic functions 
 and other software and tools, and its AMPP partner logic 
 functions, and any output files from any of the foregoing 
@@ -12,12 +12,11 @@ functions, and any output files from any of the foregoing
 associated documentation or information are expressly subject 
 to the terms and conditions of the Intel Program License 
 Subscription Agreement, the Intel Quartus Prime License Agreement,
-the Intel MegaCore Function License Agreement, or other 
-applicable license agreement, including, without limitation, 
-that your use is for the sole purpose of programming logic 
-devices manufactured by Intel and sold by Intel or its 
-authorized distributors.  Please refer to the applicable 
-agreement for further details.
+the Intel FPGA IP License Agreement, or other applicable license
+agreement, including, without limitation, that your use is for
+the sole purpose of programming logic devices manufactured by
+Intel and sold by Intel or its authorized distributors.  Please
+refer to the applicable agreement for further details.
 */
 (header "symbol" (version "1.1"))
 (symbol
@@ -397,7 +396,7 @@ agreement for further details.
 		(text "uart_0_rx_tx" (rect 166 1051 404 2115)(font "Arial" (color 128 0 0)(font_size 9)))
 		(text "rxd" (rect 245 1075 508 2160)(font "Arial" (color 0 0 0)))
 		(text "txd" (rect 245 1091 508 2192)(font "Arial" (color 0 0 0)))
-		(text " Qsys " (rect 550 1112 1136 2234)(font "Arial" ))
+		(text " system " (rect 541 1112 1130 2234)(font "Arial" ))
 		(line (pt 240 32)(pt 336 32)(line_width 1))
 		(line (pt 336 32)(pt 336 1112)(line_width 1))
 		(line (pt 240 1112)(pt 336 1112)(line_width 1))

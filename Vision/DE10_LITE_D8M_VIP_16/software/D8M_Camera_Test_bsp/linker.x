@@ -2,9 +2,9 @@
  * linker.x - Linker script
  *
  * Machine generated for CPU 'nios2_gen2' in SOPC Builder design 'Qsys'
- * SOPC Builder design path: C:/Users/andre/summer_project_2023/EEEBalanceBug/Vision/DE10_LITE_D8M_VIP_16/Qsys.sopcinfo
+ * SOPC Builder design path: ../../Qsys.sopcinfo
  *
- * Generated: Tue May 30 10:53:35 BST 2023
+ * Generated: Fri Jun 02 14:37:55 BST 2023
  */
 
 /*
