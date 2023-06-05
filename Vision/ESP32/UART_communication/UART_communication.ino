@@ -5,7 +5,7 @@
 #define TX1 17 // FPGA side: (ARDUINO_IO[8]) 
 
 unsigned long start = 0;
-unsigned long period = 500;
+unsigned long period = 10;
 
 char buf[4];
 //char msg_buf[];
@@ -15,7 +15,7 @@ int bb[3][4];
 int centre[2];
 int x_error;
 
-int state;
+int state = -1;
 
 int isNum(char* str, int size) {
   bool isNum =  true;
@@ -88,27 +88,31 @@ int raw_decode(char* buf) {
   if (byte2int(buf, 4) == 0x00524242) {
     state = 0;
   }
-
-  switch(state) {
-    case 0:
-      Serial.println("start of message");
-      break;
-    case 1: case 2: case 3: case 4: case 5: case 6:
-      for (int i=0; i<2; i++) {
-        bb[(state-1)/2][i] = byte2int(buf+(i*2), 2);
-      }
-      break;
-    case (7):
-      x_error = byte2int_signed(buf, 4);
-      break;
-    case (8):
-      for (int i=0; i<2; i++) {
-        centre[i] = byte2int(buf+(i*2), 2);
-      }
-      break;
-    default:
-      Serial.println("out of bounds error");
-      break;
+  if (state != NULL) {
+    switch(state) {
+      case 0:
+        Serial.println("start of message");
+        break;
+      case 1: case 2: case 3: case 4: case 5: case 6:
+        Serial.println("state 1,2,3,4,5,6");
+        // for (int i=0; i<2; i++) {
+        //   bb[(state-1)/2][i] = byte2int(buf+(i*2), 2);
+        // }
+        break;
+      case (7):
+        Serial.println("state 7");
+        // x_error = byte2int_signed(buf, 4);
+        break;
+      case (8):
+        Serial.println("state 8");
+        // for (int i=0; i<2; i++) {
+        //   centre[i] = byte2int(buf+(i*2), 2);
+        // }
+        break;
+      default:
+        Serial.println("out of bounds error");
+        break;
+    }
   }
 
   state++;
@@ -165,17 +169,23 @@ void setup() {
 
 void loop() {
 
-  unsigned long currentMillis = millis();
+  // unsigned long currentMillis = millis();
 
-  if (currentMillis - start >= period) {
-    start = currentMillis;
+  // if (currentMillis - start >= period) {
+  //   start = currentMillis;
+  // }
 
     if (Serial1.available() > 0){
 
-      int size = Serial1.readBytesUntil('\n', buf, 4);
-      raw_decode(buf);
-      data2string();
-
+    int size = Serial1.readBytes(buf, 4);
+    if (size == 4) {
+      Serial.print("read ");
+      Serial.print(size);
+      Serial.print(" bytes: ");
+      Serial.print(byte2int(buf, size), HEX);
+      Serial.println();
+      //raw_decode(buf);
+      //data2string();
     }
   }
 }
