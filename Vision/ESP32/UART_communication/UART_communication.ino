@@ -5,7 +5,7 @@
 #define TXD2 17 // FPGA side: (ARDUINO_IO[8]) 
 
 unsigned long start = 0;
-unsigned long period = 10;
+unsigned long period = 500;
 
 unsigned int bb[3][4] = {0};
 int centre[2] = {0};
@@ -16,7 +16,7 @@ int state = -1;
 int isNum(char* str, int size) {
   bool isNum =  true;
   for (int i=0; i<size; i++) {
-    isNum = isdigit(str[i]);
+    isNum = isDigit(buf[i]);
   }
   return isNum;
 }
@@ -165,11 +165,12 @@ void setup() {
 
 void loop() {
 
-  // unsigned long currentMillis = millis();
+  unsigned long currentMillis = millis();
 
-  // if (currentMillis - start >= period) {
-  //   start = currentMillis;
-  // }
+  if (currentMillis - start >= period) {
+    start = currentMillis;
+
+    if (Serial.available() > 0){
 
   if (Serial1.available() >= 4){
     byte buf[4];

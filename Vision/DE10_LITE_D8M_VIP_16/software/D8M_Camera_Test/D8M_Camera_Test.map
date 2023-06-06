@@ -2374,19 +2374,19 @@ LOAD c:/intelfpga_lite/18.1/nios2eds/bin/gnu/h-x86_64-mingw32/bin/../lib/gcc/nio
 
 .debug_str      0x0000000000000000     0x43fb
  *(.debug_str)
- .debug_str     0x0000000000000000      0x345 obj/default/I2C_core.o
-                                        0x38f (size before relaxing)
- .debug_str     0x0000000000000345       0xad obj/default/auto_focus.o
-                                        0x288 (size before relaxing)
- .debug_str     0x00000000000003f2      0x433 obj/default/main.o
-                                        0x6a9 (size before relaxing)
- .debug_str     0x0000000000000825       0x79 obj/default/mipi_bridge_config.o
-                                        0x257 (size before relaxing)
- .debug_str     0x000000000000089e      0x13d obj/default/mipi_camera_config.o
-                                        0x34f (size before relaxing)
- .debug_str     0x00000000000009db       0x98 obj/default/queue.o
-                                        0x252 (size before relaxing)
- .debug_str     0x0000000000000a73      0x16d c:/intelfpga_lite/18.1/nios2eds/bin/gnu/h-x86_64-mingw32/bin/../lib/gcc/nios2-elf/5.3.0\libgcc.a(lib2-divmod.o)
+ .debug_str     0x0000000000000000      0x31e obj/default/I2C_core.o
+                                        0x368 (size before relaxing)
+ .debug_str     0x000000000000031e       0xad obj/default/auto_focus.o
+                                        0x261 (size before relaxing)
+ .debug_str     0x00000000000003cb      0x433 obj/default/main.o
+                                        0x682 (size before relaxing)
+ .debug_str     0x00000000000007fe       0x79 obj/default/mipi_bridge_config.o
+                                        0x230 (size before relaxing)
+ .debug_str     0x0000000000000877      0x13d obj/default/mipi_camera_config.o
+                                        0x328 (size before relaxing)
+ .debug_str     0x00000000000009b4       0x98 obj/default/queue.o
+                                        0x22b (size before relaxing)
+ .debug_str     0x0000000000000a4c      0x16d c:/intelfpga_lite/18.1/nios2eds/bin/gnu/h-x86_64-mingw32/bin/../lib/gcc/nios2-elf/5.3.0\libgcc.a(lib2-divmod.o)
                                         0x1b8 (size before relaxing)
  .debug_str     0x0000000000000be0      0x177 c:/intelfpga_lite/18.1/nios2eds/bin/gnu/h-x86_64-mingw32/bin/../lib/gcc/nios2-elf/5.3.0/../../../../../H-x86_64-mingw32/nios2-elf/lib\libc.a(lib_a-fopen.o)
                                         0x5ec (size before relaxing)

@@ -2,7 +2,6 @@
 
 #include <stdio.h>
 #include "I2C_core.h"
-#include "altera_avalon_uart.h"
 #include "terasic_includes.h"
 #include "mipi_camera_config.h"
 #include "mipi_bridge_config.h"
@@ -242,23 +241,13 @@ int main()
         alt_u16 BlueGain = BLUE_GAIN_INIT;
 
 
-        FILE* ser = fopen("/dev/uart_0", "r+");
+        FILE* ser = fopen("/dev/uart_0", "rb+");
         if(ser){
         	printf("Opened UART\n");
         } else {
         	printf("Failed to open UART\n");
         	while (1);
         }
-
-        char msg[100];
-
-        //UART communication with the ESP32
-        fprintf(ser, "Hello ESP32\n");
-        while(!fgets(msg, 100, ser)) {
-        	printf("waiting");
-        }
-        printf("ACK received\n");
-        printf(msg);
 
   while(1){
 
@@ -332,6 +321,10 @@ int main()
     	   printf("%08x ",word);
 
        }
+
+
+
+
 
        //Update the bounding box colour
        boundingBoxColour = ((boundingBoxColour + 1) & 0xff);
