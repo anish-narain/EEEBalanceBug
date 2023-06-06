@@ -82,17 +82,13 @@ void receiveVisionMessage() {
   }
 }
 
-void setup() {
-  Serial.begin(9600);
-}
-
 void loop() {
   if (Serial1.available()) {
     receiveVisionMessage();
 
     // Example: extract 6th number
     int a = hexNumbers[5];
-    int16_t value = static_cast<int16_t>(a)    // cast a as a 16 bit signed value
+    int16_t value = static_cast<int16_t>(a);    // cast a as a 16 bit signed value
   }
 }
 
