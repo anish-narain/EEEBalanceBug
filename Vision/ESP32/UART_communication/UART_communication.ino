@@ -1,19 +1,15 @@
 #include <math.h>
 #include <ctype.h>
 
-#define RX1 16 // FPGA side: (ARDUINO_IO[9])
-#define TX1 17 // FPGA side: (ARDUINO_IO[8]) 
+#define RXD2 16 // FPGA side: (ARDUINO_IO[9])
+#define TXD2 17 // FPGA side: (ARDUINO_IO[8]) 
 
 unsigned long start = 0;
 unsigned long period = 10;
 
-char buf[4];
-//char msg_buf[];
-int val = 0;
-
-int bb[3][4];
-int centre[2];
-int x_error;
+unsigned int bb[3][4] = {0};
+int centre[2] = {0};
+int x_error = 0;
 
 int state = -1;
 
@@ -65,7 +61,7 @@ void string_decode (char* buf) {
 
 }
 
-int byte2int(char* buf, int size) {
+int byte2int(byte* buf, int size) {
   int val=0;
 
   for (int i=0; i<size; i++) {
@@ -75,7 +71,7 @@ int byte2int(char* buf, int size) {
   return val;
 }
 
-int byte2int_signed(char* buf, int size) {
+int byte2int_signed(byte* buf, int size) {
   int val = (signed int)(buf[0] << (size-8));
 
   for (int i=1; i<size; i++) {
@@ -84,7 +80,7 @@ int byte2int_signed(char* buf, int size) {
   
 }
 
-int raw_decode(char* buf) {
+void raw_decode(byte* buf) {
   if (byte2int(buf, 4) == 0x00524242) {
     state = 0;
   }
@@ -163,8 +159,8 @@ void data2string() {
 
 void setup() {
   Serial.begin(115200); //console
-  Serial1.begin(115200, RX1, TX1); //FPGA
-  delay(800);
+  Serial1.begin(115200, SERIAL_8N1, RXD2, TXD2); //FPGA
+  //delay(800);
 }
 
 void loop() {
@@ -175,17 +171,19 @@ void loop() {
   //   start = currentMillis;
   // }
 
-    if (Serial1.available() > 0){
+  if (Serial1.available() >= 4){
+    byte buf[4];
+    Serial1.readBytes(buf, 4);
 
-    int size = Serial1.readBytes(buf, 4);
-    if (size == 4) {
-      Serial.print("read ");
-      Serial.print(size);
-      Serial.print(" bytes: ");
-      Serial.print(byte2int(buf, size), HEX);
-      Serial.println();
-      //raw_decode(buf);
-      //data2string();
-    }
+    // Convert the raw bytes to a formatted string
+    char formattedString[9];
+    sprintf(formattedString, "%08x", ((unsigned int)buf));
+
+    // Print the formatted string
+    Serial.print(formattedString);
+    Serial.print(" ");
+    Serial.println();
+
+    //raw_decode(buf);
   }
 }

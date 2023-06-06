@@ -15,7 +15,7 @@ int main()
 {
   printf("Terminal start\n");
 
-  FILE* ser = fopen("/dev/uart_0", "r+");
+  FILE* ser = fopen("/dev/uart_0", "w");
   if(ser){
       printf("Opened UART\n");
   } else {
@@ -23,28 +23,18 @@ int main()
       while (1);
   }
 
+  int count = 0;
+
+
   while(1) {
 
-	  char buf[20];
-	  int val = 0;
-
-	  if (fgets(buf, 20, ser) != NULL) {
-
-		  printf("message received: %s\n", buf);
-
-		  int isNum = 1;
-		  for (int i=0; (i<20) & (buf[i] != '\n'); i++) {
-			  isNum = isdigit(buf[i]);
-		  }
-
-		  printf("isNum =  %d\n", isNum);
-
-		  if (isNum) {
-			  printf(buf);
-			  val = atoi(buf);
-			  val++;
-			  fprintf(ser, "%d\n", val);
-		  }
+	  if (count < 1000){
+		  char test[] = "worked";
+		  printf("%d", sizeof(test));
+		  fwrite(test, 1, sizeof(), ser);
+		  count++;
+	  } else {
+		  count = 0;
 
 	  }
 

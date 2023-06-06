@@ -2,10 +2,10 @@
 <sch:Settings xmlns:sch="http://www.altera.com/embeddedsw/bsp/schema">
         <BspType>hal</BspType>
         <BspVersion>default</BspVersion>
-        <BspGeneratedTimeStamp>03-Jun-2023 15:14:11</BspGeneratedTimeStamp>
-        <BspGeneratedUnixTimeStamp>1685801651542</BspGeneratedUnixTimeStamp>
+        <BspGeneratedTimeStamp>06-Jun-2023 11:51:46</BspGeneratedTimeStamp>
+        <BspGeneratedUnixTimeStamp>1686048706171</BspGeneratedUnixTimeStamp>
         <BspGeneratedLocation>C:\Users\andre\summer_project_2023\EEEBalanceBug\Vision\DE10_LITE_D8M_VIP_16\software\UART_Communication_bsp</BspGeneratedLocation>
-        <BspSettingsFile>.\settings.bsp</BspSettingsFile>
+        <BspSettingsFile>settings.bsp</BspSettingsFile>
         <SopcDesignFile>..\..\Qsys.sopcinfo</SopcDesignFile>
         <JdiFile>default</JdiFile>
         <Cpu>nios2_gen2</Cpu>
