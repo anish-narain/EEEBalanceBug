@@ -130,12 +130,14 @@ assign detect_area_high  = red_detect ? {8'hff, 8'h0, 8'h0} :
 
 // Show bounding box
 wire [23:0] new_image;
-wire redbb_active, bluebb_active, yellowbb_active, whitebb_active;
+wire redbb_active, bluebb_active, yellowbb_active, whitebb_active, frontbb_active;
 assign redbb_active = (x == r_left) | (x == r_right) | (y == r_top) | (y == r_bottom);
 assign bluebb_active = (x == b_left) | (x == b_right) | (y == b_top) | (y == b_bottom);
 assign yellowbb_active = (x == y_left) | (x == y_right) | (y == y_top) | (y == y_bottom);
-assign whitebb_active = (x == w_left & y > w_left_upper) | (x == w_right & y > w_right_upper) | (y == w_left_upper & x < w_left) | (y == w_right_upper & x > w_right) | (y == w_bottom & x>11'd240 & x<11'd400);
-assign new_image = whitebb_active ? {8'd0, 8'd153, 8'd0} : redbb_active ? {8'd153, 8'd0, 8'd0} : bluebb_active ? {8'd0, 8'd0, 8'd153} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
+//assign whitebb_active = (x == w_left & y > w_left_upper) | (x == w_right & y > w_right_upper) | (y == w_left_upper & x < w_left) | (y == w_right_upper & x > w_right) | (y == w_bottom & x>11'd240 & x<11'd400);
+assign whitebb_active = (x == 11'd240 & y > 11'd440) | (x == 11'd400 & y > 11'd440);
+assign frontbb_active = (y == w_bottom & x>11'd240 & x<11'd400);
+assign new_image = whitebb_active ? {8'd0, 8'd153, 8'd0} : frontbb_active ? {8'd255, 8'd20, 8'd47} : redbb_active ? {8'd153, 8'd0, 8'd0} : bluebb_active ? {8'd0, 8'd0, 8'd153} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
 
 // Switch output pixels depending on mode switch
 // Don't modify the start-of-packet word - it's a packet discriptor
@@ -266,12 +268,12 @@ always@(posedge clk) begin
 
 		end
 		
-		if (x>11'd240 & x<11'd400) w_y_max <= y;
-		else if (x<11'd240) begin
+		if (x>11'd240 & x<11'd400 & y > 11'd440) w_y_max <= y;  // middle region 
+		else if (x<11'd240) begin						// left
 			w_l_x_max <= (x > w_l_x_max) ? x : w_l_x_max;
 			w_l_y_min <= (y < w_l_y_min) ? y : w_l_y_min;
 		end
-		else begin 
+		else begin 											// right
 			w_r_x_min <= (x < w_r_x_min) ? x : w_r_x_min;
 			w_r_y_min <= (y < w_r_y_min) ? y : w_r_y_min; 
 		end
@@ -297,7 +299,7 @@ reg [10:0] r_left, r_right, r_top, r_bottom;
 reg [10:0] b_left, b_right, b_top, b_bottom;
 reg [10:0] y_left, y_right, y_top, y_bottom;
 reg [10:0] w_bottom, w_left, w_left_upper, w_right, w_right_upper;
-reg [10:0] center_x;
+reg [10:0] center_x, front_detect;
 reg signed [10:0] r_diff_x, b_diff_x, y_diff_x;
 reg signed [10:0] x_error, center_error;
 reg [7:0] frame_count;
@@ -331,6 +333,7 @@ always@(posedge clk) begin
 		w_right_upper <= w_r_y_min;
 		
 		x_error <= w_detect_x_max - 11'd120;
+		front_detect <= (w_bottom > 11'd440) ? 11'd1 : 11'd0;
 		center_x <= (r_diff_x > b_diff_x & r_diff_x > b_diff_x) ? (r_diff_x/2 + r_x_min):(b_diff_x > y_diff_x) ? (b_diff_x/2 + b_x_min) : (y_diff_x/2 + y_x_min);
 		center_error <= (r_diff_x > b_diff_x & r_diff_x > b_diff_x) ? (r_diff_x/2 + r_x_min - 11'd320):(b_diff_x > y_diff_x) ? (b_diff_x/2 + b_x_min - 11'd320) : (y_diff_x/2 + y_x_min - 11'd320);
 		
@@ -403,7 +406,7 @@ always@(*) begin	//Write words to FIFO as state machine advances
 			msg_buf_wr = 1'b1;
 		end
 		4'b1000: begin
-			msg_buf_in = {21'b0, x_error};
+			msg_buf_in = {21'b0, front_detect};
 			msg_buf_wr = 1'b1;
 		end
 		4'b1001: begin
