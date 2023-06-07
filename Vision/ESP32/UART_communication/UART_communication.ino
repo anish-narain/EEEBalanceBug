@@ -43,18 +43,14 @@ int raw_decode(byte* buf) {
   //output
   switch(state) {
     case 0:
-      Serial.println("start of message");
       break;
     case 1: case 2: case 3:
-      Serial.println("state 1,2,3");
       dist[state-1] = byte2int(buf, 4);
       break;
     case 4:
-      Serial.println("state 4");
       col_detect = (bool)byte2int_signed(buf, 4);
       break;
     case 5:
-      Serial.println("state 5");
       for (int i=0; i<2; i++) {
         centre[i] = byte2int(buf+(i*2), 2);
       }
@@ -95,18 +91,6 @@ void loop() {
   if (Serial1.available() >= 4){
     byte buf[4];
     Serial1.readBytes(buf, 4);
-
-    // Convert the raw bytes to a formatted string
-    char formattedString[9];
-    sprintf(formattedString, "%08x", *((unsigned int*)buf));
-
-    // Print the formatted string
-    Serial.print(formattedString);
-    Serial.print(" ");
-    Serial.println();
-
-    int a = byte2int(buf, 4);
-    Serial.println(a, HEX);
     raw_decode(buf);
     //metrics2string();
     
