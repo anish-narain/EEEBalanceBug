@@ -7,13 +7,23 @@
 unsigned long start = 0;
 unsigned long period = 500;
 
-unsigned int beacon_dist[3] = {0};
+unsigned int dist[3] = {0};
 int centre[2] = {0};
 int x_error = 0;
 
 int state = -1;
 
 int byte2int(byte* buf, int size) {
+  int val=0;
+
+  for (int i=(size-1); i>=0; i--) {
+    val += buf[i] << (8*i);
+  }
+
+  return val;
+}
+
+int byte2int_signed(byte* buf, int size) {
   int val=0;
 
   for (int i=(size-1); i>=0; i--) {
@@ -37,19 +47,17 @@ int raw_decode(byte* buf) {
       break;
     case 1: case 2: case 3:
       Serial.println("state 1,2,3");
-      // for (int i=0; i<2; i++) {
-      //   bb[(state-1)/2][i] = byte2int(buf+(i*2), 2);
-      // }
+      dist[state-1] = byte2int(buf, 4);
       break;
     case 4:
       Serial.println("state 4");
-      // x_error = byte2int_signed(buf, 4);
+      x_error = byte2int_signed(buf, 4);
       break;
     case 5:
       Serial.println("state 5");
-      // for (int i=0; i<2; i++) {
-      //   centre[i] = byte2int(buf+(i*2), 2);
-      // }
+      for (int i=0; i<2; i++) {
+        centre[i] = byte2int(buf+(i*2), 2);
+      }
       break;
     default:
       Serial.println("no message");
@@ -64,6 +72,16 @@ int raw_decode(byte* buf) {
   }
 
   return 0;
+}
+
+void metrics2string() {
+  Serial.printf("dist_red = %d\n", dist[0]);
+  Serial.printf("dist_yellow = %d\n", dist[1]);
+  Serial.printf("dist_blue = %d\n", dist[2]);
+
+  Serial.printf("x_error = %d\n", x_error);
+  Serial.printf("beacon_x = %d\n", centre[0]);
+  Serial.printf("beacon_x to centre = %d\n", centre[1]);
 }
 
 void setup() {
@@ -90,6 +108,7 @@ void loop() {
     int a = byte2int(buf, 4);
     Serial.println(a, HEX);
     raw_decode(buf);
+    //metrics2string();
     
   }
 }
