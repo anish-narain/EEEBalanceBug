@@ -126,7 +126,7 @@ bool MIPI_Init(void){
 	return bSuccess;
 }
 
-void beacon_dist(int words[8]) {
+void beacons_dist(int words[8]) {
 	int w_x;
 	int dist;
 	char *color[] = {"Red", "Blue", "Yellow"};
@@ -156,6 +156,24 @@ void beacon_dist(int words[8]) {
 
 
 	}
+}
+
+int beacon_dist(int* buf) {
+	int w, h, dist;
+
+	w = ((buf[1] >> 16) - (buf[0] >> 16)) & 0xFFFF;
+	h = ((buf[1] & 0xFFFF) - (buf[0] & 0xFFFF)) & 0xFFFF;
+
+	if( w > 100 || w < 10 || h > 100 || h < 10){
+		dist = -1;
+	}
+	else if (w/h > 3 || h/w > 3){
+		dist = -2;
+	} else {
+		dist = ((width_30/w) * 300) >> 10;
+	}
+
+	return dist;
 }
 
 
@@ -249,6 +267,9 @@ int main()
         	while (1);
         }
 
+  int state = 0;
+  int buf[2];
+
   while(1){
 
        // touch KEY0 to trigger Auto focus
@@ -301,25 +322,55 @@ int main()
        }
 	#endif
 
-       int words[8];
-       int i = 0;
 
        //Read messages from the image processor and print them on the terminal
        while ((IORD(0x42000,EEE_IMGPROC_STATUS)>>8) & 0xff) { 	//Find out if there are words to read
-           int word = IORD(0x42000,EEE_IMGPROC_MSG); //Get next word from message buffer
+           int word_in, word_out;
 
-    	   if (fwrite(&word, 4, 1, ser) != 1)
-    		   printf("Error writing to UART");
-           if (word == EEE_IMGPROC_MSG_START) {				//Newline on message identifier
-        	   printf("\n");
-        	   beacon_dist(words);
-    		   printf("\n");
-           	   i = 0;
+		   word_in = IORD(0x42000,EEE_IMGPROC_MSG); //Get next word from message buffer
+    	   if (word_in == EEE_IMGPROC_MSG_START) {  //Newline on message identifier
+           	   state = 0;
+    	   }
+
+           int en = 0;
+    	   switch (state) {
+    	   	   case 0:
+    	   		   word_out = word_in;
+    	   		   en=1;
+    	   		   break;
+    	   	   case 1: case 3: case 5:
+    	   		   buf[0] = word_in;
+    	   		   break;
+    	   	   case 2: case 4: case 6:
+    	   		   buf[1] = word_in;
+    	   		   word_out = beacon_dist(buf);
+    	   		   en=1;
+    	   		   break;
+    	   	   case 7: case 8:
+    	   		   word_out = word_in;
+    	   		   en=1;
+    	   		   break;
+    	   	   default:
+    	   		   break;
+    	   }
+
+    	   if (en) {
+    		   if (fwrite(&word_out, 4, 1, ser) != 1) {
+    			   printf("Error writing to UART");
+    		   } else {
+    			   char space = (state == 8) ? '\n' : ' ';
+    			   printf("%08x",word_out);
+    			   printf("%c",space);
+    		   }
+    	   }
+
+
+           //next state
+           if ((state > -1) & (state < 8)) {
+        	   state++;
+           } else if (state ==  8) {
+               state = -1;
            }
-           words[i] = word;
-           i++;
-    	   printf("%08x ",word);
-
        }
 
 
