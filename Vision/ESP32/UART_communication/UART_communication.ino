@@ -9,7 +9,7 @@ unsigned long period = 500;
 
 unsigned int dist[3] = {0};
 int centre[2] = {0};
-int x_error = 0;
+bool col_detect = true;
 
 int state = -1;
 
@@ -51,7 +51,7 @@ int raw_decode(byte* buf) {
       break;
     case 4:
       Serial.println("state 4");
-      x_error = byte2int_signed(buf, 4);
+      col_detect = (bool)byte2int_signed(buf, 4);
       break;
     case 5:
       Serial.println("state 5");
@@ -79,7 +79,7 @@ void metrics2string() {
   Serial.printf("dist_yellow = %d\n", dist[1]);
   Serial.printf("dist_blue = %d\n", dist[2]);
 
-  Serial.printf("x_error = %d\n", x_error);
+  Serial.printf("col_detect = %d\n", col_detect);
   Serial.printf("beacon_x = %d\n", centre[0]);
   Serial.printf("beacon_x to centre = %d\n", centre[1]);
 }
