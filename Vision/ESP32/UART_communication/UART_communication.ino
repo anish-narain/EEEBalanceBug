@@ -56,7 +56,6 @@ int raw_decode(byte* buf) {
       }
       break;
     default:
-      Serial.println("no message");
       break;
   }
 
