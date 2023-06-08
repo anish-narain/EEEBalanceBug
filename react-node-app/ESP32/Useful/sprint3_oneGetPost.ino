@@ -185,7 +185,7 @@ void httpGetPostTask(void* parameter) {
     httpPOST.end();
     httpGET.end();
 
-    //delay(0);  // Wait for 0.5 seconds before sending the next request
+    //delay(100);  // Wait for 0.5 seconds before sending the next request
   }
 }
 
@@ -262,8 +262,8 @@ void motorTask(void* parameter) {
 void setup() {
   Serial.begin(9600);
 
-  s1.init(stepPin1, dirPin1, 5000, true);  // left
-  s2.init(stepPin2, dirPin2, 5000, true);  // right - inverted direction
+  s1.init(stepPin1, dirPin1, 2500, true);  // left
+  s2.init(stepPin2, dirPin2, 2500, true);  // right - inverted direction
   //s1.start();
   //s2.start();
 
