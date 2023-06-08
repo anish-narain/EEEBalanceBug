@@ -301,7 +301,7 @@ void motorTask(void* parameter){
       printCount = 0;
     }
 
-    delay(0);  // Wait for 0.5 seconds before sending the next request  
+    //delay(0);  // Wait for 0.5 seconds before sending the next request  
   }
 }
 
