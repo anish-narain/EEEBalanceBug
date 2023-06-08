@@ -116,7 +116,7 @@ assign blue_detect = (H > 8'd132 & H < 8'd212) & (S > 8'd120) & (V > 8'd50);
 
 //assign white_detect = (S <= 8'd4) & (V >= 8'd4);
 //assign white_detect = (red > 8'd16 & red < 8'd74) & (green > 8'd25 & green < 8'd84) & (blue > 8'd16 & blue < 8'd49);
-assign white_detect = (red > 8'd35 & red < 8'd140) & (green > 8'd45 & green < 8'd170) & (blue > 8'd18 & blue < 8'd100) & y > 11'd260;
+assign white_detect = (red > 8'd35 & red < 8'd140) & (green > 8'd45 & green < 8'd170) & (blue > 8'd18 & blue < 8'd100) & y < 11'd300;
 
 // Find boundary of cursor box
 
@@ -135,8 +135,8 @@ assign redbb_active = (x == r_left) | (x == r_right) | (y == r_top) | (y == r_bo
 assign bluebb_active = (x == b_left) | (x == b_right) | (y == b_top) | (y == b_bottom);
 assign yellowbb_active = (x == y_left) | (x == y_right) | (y == y_top) | (y == y_bottom);
 //assign whitebb_active = (x == w_left & y > w_left_upper) | (x == w_right & y > w_right_upper) | (y == w_left_upper & x < w_left) | (y == w_right_upper & x > w_right) | (y == w_bottom & x>11'd240 & x<11'd400);
-assign whitebb_active = (x == 11'd240 & y > 11'd440) | (x == 11'd400 & y > 11'd440);
-assign frontbb_active = (y == w_bottom & x>11'd240 & x<11'd400);
+assign whitebb_active = (x == 11'd170 & y < 11'd100) | (x == 11'd470 & y < 11'd100);
+assign frontbb_active = (y == w_bottom & x>11'd170 & x<11'd430);
 assign new_image = whitebb_active ? {8'd0, 8'd153, 8'd0} : frontbb_active ? {8'd255, 8'd20, 8'd47} : redbb_active ? {8'd153, 8'd0, 8'd0} : bluebb_active ? {8'd0, 8'd0, 8'd153} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
 
 // Switch output pixels depending on mode switch
@@ -246,7 +246,7 @@ always@(posedge clk) begin
 end
 
 //For collision prevention, must detect white pixels in middle region of the image
-reg [10:0] w_y_max, w_l_x_max, w_l_y_min, w_r_x_min, w_r_y_min, w_detect_x_max;
+reg [10:0] w_y_min, w_l_x_max, w_l_y_min, w_r_x_min, w_r_y_min, w_detect_x_max;
 reg [10:0] max_error;
 wire signed [10:0] t0;
 wire [10:0] t1;
@@ -268,7 +268,7 @@ always@(posedge clk) begin
 
 		end
 		
-		if (x>11'd240 & x<11'd400 & y > 11'd440) w_y_max <= y;  // middle region 
+		if (x>11'd170 & x<11'd470 & y < 11'd100) w_y_min <= y;  // middle region 
 		else if (x<11'd240) begin						// left
 			w_l_x_max <= (x > w_l_x_max) ? x : w_l_x_max;
 			w_l_y_min <= (y < w_l_y_min) ? y : w_l_y_min;
@@ -280,7 +280,7 @@ always@(posedge clk) begin
 	end
 	
 	if (sop & in_valid) begin
-		w_y_max <= 11'h0;
+		w_y_min <= IMAGE_H-11'h1;
 		w_l_y_min <= IMAGE_H-11'h1;
 		w_r_y_min <= IMAGE_H-11'h1;
 		w_r_x_min <= IMAGE_W-11'h1;
@@ -326,14 +326,14 @@ always@(posedge clk) begin
 		y_bottom <= y_y_max;
 		y_diff_x <= y_x_max - y_x_min;
 		
-		w_bottom <= w_y_max;
+		w_bottom <= w_y_min;
 		w_left <= w_l_x_max;
 		w_right <= w_r_x_min;
 		w_left_upper <= w_l_y_min;
 		w_right_upper <= w_r_y_min;
 		
 		x_error <= w_detect_x_max - 11'd120;
-		front_detect <= (w_bottom > 11'd440) ? 11'd1 : 11'd0;
+		front_detect <= (w_bottom < 11'd100) ? 11'd1 : 11'd0;
 		center_x <= (r_diff_x > b_diff_x & r_diff_x > b_diff_x) ? (r_diff_x/2 + r_x_min):(b_diff_x > y_diff_x) ? (b_diff_x/2 + b_x_min) : (y_diff_x/2 + y_x_min);
 		center_error <= (r_diff_x > b_diff_x & r_diff_x > b_diff_x) ? (r_diff_x/2 + r_x_min - 11'd320):(b_diff_x > y_diff_x) ? (b_diff_x/2 + b_x_min - 11'd320) : (y_diff_x/2 + y_x_min - 11'd320);
 		
