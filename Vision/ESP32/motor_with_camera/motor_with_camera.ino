@@ -212,12 +212,13 @@ float lastTime, Ts;
 void loop() {
   //Serial.printf("cA");
   if (Serial1.available() >= 4){
+    Serial.print("MSG RECEIVED");
     byte buf[4];
     Serial1.readBytes(buf, 4);
+    int a = byte2int(buf, 4);
+    Serial.println(a, HEX);
     raw_decode(buf);
     //metrics2string();
-    Serial.printf("B");
-    Serial.printf("collision = %d\n", col_detect);
     
   }
 
@@ -282,4 +283,3 @@ void loop() {
   */
 
 }
-
