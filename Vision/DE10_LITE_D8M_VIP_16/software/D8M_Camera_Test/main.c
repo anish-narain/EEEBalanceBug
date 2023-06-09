@@ -177,6 +177,15 @@ int beacon_dist(int* buf) {
 	return dist;
 }
 
+int byte2int(unsigned char* buf, int size) {
+  int val=0;
+
+  for (int i=(size-1); i>=0; i--) {
+    val += buf[i] << (8*i);
+  }
+
+  return val;
+}
 
 
 int main()
@@ -374,6 +383,26 @@ int main()
            }
        }
 
+
+       // read messages for zoom in and out-------------------
+       unsigned char buf[4];
+       printf("test0\n");
+
+       // need to change here---------------------------
+
+	   buf = IORD(0x42020, 0);
+	   int tmp = byte2int(buf, 4);
+	   printf("test1\n");
+	   if (tmp == 1){
+		   MIPI_BIN_LEVEL(tmp);
+		   printf("set bin level to %d\n",tmp);
+		   usleep(500000);
+	   }
+	   else if (tmp == 3){
+		   MIPI_BIN_LEVEL(tmp);
+		   printf("set bin level to %d\n",tmp);
+		   usleep(500000);
+	   }
 
 
 
