@@ -74,22 +74,22 @@ void mipi_show_error_info(void){
 	MDLSynErr = MipiBridgeRegRead(MIPI_REG_MDLSynErr);
 	FrmErrCnt = MipiBridgeRegRead(MIPI_REG_FrmErrCnt);
 	MDLErrCnt = MipiBridgeRegRead(MIPI_REG_MDLErrCnt);
-	printf("PHY_status=%xh, CSI_status=%xh, MDLSynErr=%xh, FrmErrCnt=%xh, MDLErrCnt=%xh\r\n", PHY_status, SCI_status, MDLSynErr,FrmErrCnt, MDLErrCnt);
+	//printf("PHY_status=%xh, CSI_status=%xh, MDLSynErr=%xh, FrmErrCnt=%xh, MDLErrCnt=%xh\r\n", PHY_status, SCI_status, MDLSynErr,FrmErrCnt, MDLErrCnt);
 }
 
 void mipi_show_error_info_more(void){
-    printf("FrmErrCnt = %d\n",MipiBridgeRegRead(0x0080));
-    printf("CRCErrCnt = %d\n",MipiBridgeRegRead(0x0082));
-    printf("CorErrCnt = %d\n",MipiBridgeRegRead(0x0084));
-    printf("HdrErrCnt = %d\n",MipiBridgeRegRead(0x0086));
-    printf("EIDErrCnt = %d\n",MipiBridgeRegRead(0x0088));
-    printf("CtlErrCnt = %d\n",MipiBridgeRegRead(0x008A));
-    printf("SoTErrCnt = %d\n",MipiBridgeRegRead(0x008C));
-    printf("SynErrCnt = %d\n",MipiBridgeRegRead(0x008E));
-    printf("MDLErrCnt = %d\n",MipiBridgeRegRead(0x0090));
-    printf("FIFOSTATUS = %d\n",MipiBridgeRegRead(0x00F8));
-    printf("DataType = 0x%04x\n",MipiBridgeRegRead(0x006A));
-    printf("CSIPktLen = %d\n",MipiBridgeRegRead(0x006E));
+    //printf("FrmErrCnt = %d\n",MipiBridgeRegRead(0x0080));
+    //printf("CRCErrCnt = %d\n",MipiBridgeRegRead(0x0082));
+    //printf("CorErrCnt = %d\n",MipiBridgeRegRead(0x0084));
+    //printf("HdrErrCnt = %d\n",MipiBridgeRegRead(0x0086));
+    //printf("EIDErrCnt = %d\n",MipiBridgeRegRead(0x0088));
+    //printf("CtlErrCnt = %d\n",MipiBridgeRegRead(0x008A));
+    //printf("SoTErrCnt = %d\n",MipiBridgeRegRead(0x008C));
+    //printf("SynErrCnt = %d\n",MipiBridgeRegRead(0x008E));
+    //printf("MDLErrCnt = %d\n",MipiBridgeRegRead(0x0090));
+    //printf("FIFOSTATUS = %d\n",MipiBridgeRegRead(0x00F8));
+    //printf("DataType = 0x%04x\n",MipiBridgeRegRead(0x006A));
+    //printf("CSIPktLen = %d\n",MipiBridgeRegRead(0x006E));
 }
 
 
@@ -100,7 +100,7 @@ bool MIPI_Init(void){
 
 	bSuccess = oc_i2c_init_ex(I2C_OPENCORES_MIPI_BASE, 50*1000*1000,400*1000); //I2C: 400K
 	if (!bSuccess)
-		printf("failed to init MIPI- Bridge i2c\r\n");
+		//printf("failed to init MIPI- Bridge i2c\r\n");
 
     usleep(50*1000);
     MipiBridgeInit();
@@ -109,7 +109,7 @@ bool MIPI_Init(void){
 
 //	bSuccess = oc_i2c_init_ex(I2C_OPENCORES_CAMERA_BASE, 50*1000*1000,400*1000); //I2C: 400K
 //	if (!bSuccess)
-//		printf("failed to init MIPI- Camera i2c\r\n");
+//		//printf("failed to init MIPI- Camera i2c\r\n");
 
     MipiCameraInit();
     MIPI_BIN_LEVEL(DEFAULT_LEVEL);
@@ -135,17 +135,17 @@ void beacons_dist(int words[8]) {
 	for (int i = 1; i < 7; i+=2){
 		w_x = ((words[i + 1] >> 16) - (words[i] >> 16)) & 0xFFFF;
 		w_y = ((words[i + 1] & 0xFFFF) - (words[i] & 0xFFFF)) & 0xFFFF;
-		printf("w_x %d, w_y %d\n", w_x, w_y);
+		//printf("w_x %d, w_y %d\n", w_x, w_y);
 
 		if( w_x > 100 || w_x < 10 || w_y > 100 || w_y < 10){
-					printf("Too small or too big for %s, ERROR!;\n", color[idx]);
+					//printf("Too small or too big for %s, ERROR!;\n", color[idx]);
 		}
 		else if (w_x/w_y > 3 || w_y/w_x > 3){
-					fprintf("Not like a square for %s, ratio ERROR!;\n", color[idx]);
+					//f//printf("Not like a square for %s, ratio ERROR!;\n", color[idx]);
 		}
 		else {
 			dist = ((width_30/w_x) * 300) >> 10;
-			printf("distance to beacon %s = %d\n", color[idx], dist);
+			//printf("distance to beacon %s = %d\n", color[idx], dist);
 		}
 
 		idx += 1;
@@ -170,7 +170,8 @@ int beacon_dist(int* buf) {
 	else if (w/h > 3 || h/w > 3){
 		dist = -2;
 	} else {
-		dist = ((width_30/w) * 300) >> 10;
+		//dist = ((width_30/w) * 300) >> 10;
+		dist = ((height_30/h) * 300) >> 10;
 	}
 
 	return dist;
@@ -183,8 +184,8 @@ int main()
 
 	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
 
-  printf("DE10-LITE D8M VGA Demo\n");
-  printf("Imperial College EEE2 Project version\n");
+  //printf("DE10-LITE D8M VGA Demo\n");
+  //printf("Imperial College EEE2 Project version\n");
   IOWR(MIPI_PWDN_N_BASE, 0x00, 0x00);
   IOWR(MIPI_RESET_N_BASE, 0x00, 0x00);
 
@@ -193,8 +194,8 @@ int main()
   usleep(2000);
   IOWR(MIPI_RESET_N_BASE, 0x00, 0xFF);
 
-  printf("Image Processor ID: %x\n",IORD(0x42000,EEE_IMGPROC_ID));
-  //printf("Image Processor ID: %x\n",IORD(EEE_IMGPROC_0_BASE,EEE_IMGPROC_ID)); //Don't know why this doesn't work - definition is in system.h in BSP
+  //printf("Image Processor ID: %x\n",IORD(0x42000,EEE_IMGPROC_ID));
+  ////printf("Image Processor ID: %x\n",IORD(EEE_IMGPROC_0_BASE,EEE_IMGPROC_ID)); //Don't know why this doesn't work - definition is in system.h in BSP
 
 
   usleep(2000);
@@ -202,9 +203,9 @@ int main()
 
   // MIPI Init
    if (!MIPI_Init()){
-	  printf("MIPI_Init Init failed!\r\n");
+	  //printf("MIPI_Init Init failed!\r\n");
   }else{
-	  printf("MIPI_Init Init successfully!\r\n");
+	  //printf("MIPI_Init Init successfully!\r\n");
   }
 
 //   while(1){
@@ -214,12 +215,12 @@ int main()
 	 	usleep(1000*1000);
 	    mipi_show_error_info();
 //	    mipi_show_error_info_more();
-	    printf("\n");
+	    //printf("\n");
 //   }
 
 
 #if 0  // focus sweep
-	    printf("\nFocus sweep\n");
+	    //printf("\nFocus sweep\n");
  	 	alt_u16 ii= 350;
  	    alt_u8  dir = 0;
  	 	while(1){
@@ -229,7 +230,7 @@ int main()
  	 		if(dir) ii += 20;
  	 		else    ii -= 20;
 
- 	    	printf("%d\n",ii);
+ 	    	//printf("%d\n",ii);
  	     OV8865_FOCUS_Move_to(ii);
  	     usleep(50*1000);
  	    }
@@ -261,9 +262,9 @@ int main()
 
         FILE* ser = fopen("/dev/uart_0", "rb+");
         if(ser){
-        	printf("Opened UART\n");
+        	//printf("Opened UART\n");
         } else {
-        	printf("Failed to open UART\n");
+        	//printf("Failed to open UART\n");
         	while (1);
         }
 
@@ -282,7 +283,7 @@ int main()
 	         if((IORD(KEY_BASE,0)&0x03) == 0x01){
 	      	   if(bin_level == 3 )bin_level = 1;
 	      	   else bin_level ++;
-	      	   printf("set bin level to %d\n",bin_level);
+	      	   //printf("set bin level to %d\n",bin_level);
 	      	   MIPI_BIN_LEVEL(bin_level);
 	      	 	usleep(500000);
 
@@ -315,7 +316,7 @@ int main()
        if((IORD(KEY_BASE,0)&0x0F) == 0x07){
     	   if(bin_level == 3 )bin_level = 1;
     	   else bin_level ++;
-    	   printf("set bin level to %d\n",bin_level);
+    	   //printf("set bin level to %d\n",bin_level);
     	   MIPI_BIN_LEVEL(bin_level);
     	 	usleep(500000);
 
@@ -356,11 +357,11 @@ int main()
 
     	   if (en) {
     		   if (fwrite(&word_out, 4, 1, ser) != 1) {
-    			   printf("Error writing to UART");
+    			   //printf("Error writing to UART");
     		   } else {
     			   char space = (state == 8) ? '\n' : ' ';
-    			   printf("%08x",word_out);
-    			   printf("%c",space);
+    			   //printf("%08x",word_out);
+    			   //printf("%c",space);
     		   }
     	   }
 
@@ -387,64 +388,64 @@ int main()
        	   case 'e': {
        		   exposureTime += EXPOSURE_STEP;
        		   OV8865SetExposure(exposureTime);
-       		   printf("\nExposure = %x ", exposureTime);
+       		   //printf("\nExposure = %x ", exposureTime);
        	   	   break;}
        	   case 'd': {
        		   exposureTime -= EXPOSURE_STEP;
        		   OV8865SetExposure(exposureTime);
-       		   printf("\nExposure = %x ", exposureTime);
+       		   //printf("\nExposure = %x ", exposureTime);
        	   	   break;}
        	   case 't': {
        		   gain += GAIN_STEP;
        		   OV8865SetGain(gain);
-       		   printf("\nGain = %x ", gain);
+       		   //printf("\nGain = %x ", gain);
        	   	   break;}
        	   case 'g': {
        		   gain -= GAIN_STEP;
        		   OV8865SetGain(gain);
-       		   printf("\nGain = %x ", gain);
+       		   //printf("\nGain = %x ", gain);
        	   	   break;}
        	   case 'r': {
         	   current_focus += manual_focus_step;
         	   if(current_focus >1023) current_focus = 1023;
         	   OV8865_FOCUS_Move_to(current_focus);
-        	   printf("\nFocus = %x ",current_focus);
+        	   //printf("\nFocus = %x ",current_focus);
        	   	   break;}
        	   case 'f': {
         	   if(current_focus > manual_focus_step) current_focus -= manual_focus_step;
         	   OV8865_FOCUS_Move_to(current_focus);
-        	   printf("\nFocus = %x ",current_focus);
+        	   //printf("\nFocus = %x ",current_focus);
        	   	   break;}
 
 			case 'i':{
 				RedGain += RGB_STEP;
 				OV8865RedGain(RedGain);
-				fprintf(stderr, "\n red Gain is now set to  = %x", RedGain);
+				//f//printf(stderr, "\n red Gain is now set to  = %x", RedGain);
 				break;}
 			case 'j':{
 				RedGain -= RGB_STEP;
 				OV8865RedGain(RedGain);
-				fprintf(stderr, "\n red Gain is now set to  = %x", RedGain);
+				//f//printf(stderr, "\n red Gain is now set to  = %x", RedGain);
 				break;}
 			case 'k':{
 				GreenGain += RGB_STEP;
 				OV8865GreenGain(GreenGain);
-				fprintf(stderr, "\n green Gain is now set to = %x", GreenGain);
+				//f//printf(stderr, "\n green Gain is now set to = %x", GreenGain);
 				break;}
 			case 'o':{
 				GreenGain -= RGB_STEP;
 				OV8865GreenGain(GreenGain);
-				fprintf(stderr, "\n green Gain is now set to = %x", GreenGain);
+				//f//printf(stderr, "\n green Gain is now set to = %x", GreenGain);
 				break;}
 			case 'p':{
 				BlueGain += RGB_STEP;
 				OV8865BlueGain(BlueGain);
-				fprintf(stderr, "\n blue Gain is now set to = %x", BlueGain);
+				//f//printf(stderr, "\n blue Gain is now set to = %x", BlueGain);
 				break;}
 			case 'q':{
 				BlueGain -= RGB_STEP;
 				OV8865BlueGain(BlueGain);
-				fprintf(stderr, "\n blue Gain is now set to = %x", BlueGain);
+				//f//printf(stderr, "\n blue Gain is now set to = %x", BlueGain);
 				break;}
 			   }
 
