@@ -136,7 +136,7 @@ assign bluebb_active = (x == b_left) | (x == b_right) | (y == b_top) | (y == b_b
 assign yellowbb_active = (x == y_left) | (x == y_right) | (y == y_top) | (y == y_bottom);
 //assign whitebb_active = (x == w_left & y > w_left_upper) | (x == w_right & y > w_right_upper) | (y == w_left_upper & x < w_left) | (y == w_right_upper & x > w_right) | (y == w_bottom & x>11'd240 & x<11'd400);
 //assign whitebb_active = (x == 11'd170 & y < 11'd100) | (x == 11'd470 & y < 11'd100);
-assign whitebb_active = (y == 11'd120);
+assign whitebb_active = (y == 11'd180);
 assign frontbb_active = (y == w_bottom);
 assign new_image = whitebb_active ? {8'd0, 8'd153, 8'd0} : frontbb_active ? {8'd255, 8'd20, 8'd47} : redbb_active ? {8'd153, 8'd0, 8'd0} : bluebb_active ? {8'd0, 8'd0, 8'd153} : yellowbb_active ? {8'd153, 8'd153, 8'd0}: detect_area_high;
 
@@ -270,7 +270,7 @@ always@(posedge clk) begin
 		end
 		
 		//if (x>11'd170 & x<11'd470 & y < 11'd100) w_y_min <= y;  // middle region
-		if (y < 11'd120 & w_y_min > y) w_y_min <= y;
+		if (y < 11'd180 & w_y_min > y) w_y_min <= y;
 		else if (x<11'd240) begin						// left
 			w_l_x_max <= (x > w_l_x_max) ? x : w_l_x_max;
 			w_l_y_min <= (y < w_l_y_min) ? y : w_l_y_min;
@@ -335,7 +335,7 @@ always@(posedge clk) begin
 		w_right_upper <= w_r_y_min;
 		
 		x_error <= w_detect_x_max - 11'd120;
-		front_detect <= (w_bottom < 11'd120) ? 11'd1 : 11'd0;
+		front_detect <= (w_bottom < 11'd180) ? 11'd1 : 11'd0;
 		center_x <= (r_diff_x > b_diff_x & r_diff_x > b_diff_x) ? (r_diff_x/2 + r_x_min):(b_diff_x > y_diff_x) ? (b_diff_x/2 + b_x_min) : (y_diff_x/2 + y_x_min);
 		center_error <= (r_diff_x > b_diff_x & r_diff_x > b_diff_x) ? (r_diff_x/2 + r_x_min - 11'd320):(b_diff_x > y_diff_x) ? (b_diff_x/2 + b_x_min - 11'd320) : (y_diff_x/2 + y_x_min - 11'd320);
 		
