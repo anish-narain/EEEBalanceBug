@@ -1,54 +1,58 @@
 #include <math.h>
 #include <ctype.h>
+#include <Arduino.h>
 
 #define RXD2 16 // FPGA side: (ARDUINO_IO[9])
 #define TXD2 17 // FPGA side: (ARDUINO_IO[8]) 
 
-unsigned long start = 0;
-unsigned long period = 500;
-
 unsigned int dist[3] = {0};
 int centre[2] = {0};
 bool col_detect = true;
+int zoom_level = 1;
 
-int state = -1;
+int r_state = -1;
+int t_flag = 0;
+
+unsigned long prev = 0;
+unsigned long period = 5000;
+
 
 int byte2int(byte* buf, int size) {
   int val=0;
 
-  for (int i=(size-1); i>=0; i--) {
-    val += buf[i] << (8*i);
+  // for (int i=(size-1); i>=0; i--) {
+  //   val += buf[i] << (8*i);
+  // }
+
+  for (int i=0; i<size; i++) {
+    val+= buf[i] << (8*i);
   }
 
   return val;
 }
 
-int byte2int_signed(byte* buf, int size) {
-  int val=0;
-
-  for (int i=(size-1); i>=0; i--) {
-    val += buf[i] << (8*i);
+void int2byte(int n, byte bytes[4]) {
+  for (int i=0; i<4; i++) {
+    bytes[i] = (n >> 8*i) & 0xFF;
   }
-
-  return val;
 }
 
 int raw_decode(byte* buf) {
 
   //start condition
   if (byte2int(buf, 4) == 0x00524242) {
-    state = 0;
+    r_state = 0;
   }
 
   //output
-  switch(state) {
+  switch(r_state) {
     case 0:
       break;
     case 1: case 2: case 3:
-      dist[state-1] = byte2int(buf, 4);
+      dist[r_state-1] = byte2int(buf, 4);
       break;
     case 4:
-      col_detect = (bool)byte2int_signed(buf, 4);
+      col_detect = (bool)byte2int(buf, 4);
       break;
     case 5:
       for (int i=0; i<2; i++) {
@@ -59,11 +63,11 @@ int raw_decode(byte* buf) {
       break;
   }
 
-  //next state
-  if (state > -1 & state < 5) {
-    state++;
-  } else if (state == 5) {
-    state = -1;
+  //next r_state
+  if (r_state > -1 & r_state < 5) {
+    r_state++;
+  } else if (r_state == 5) {
+    r_state = -1;
   }
 
   return 0;
@@ -87,11 +91,32 @@ void setup() {
 
 void loop() {
 
+  //RECEIVING
   if (Serial1.available() >= 4){
     byte buf[4];
     Serial1.readBytes(buf, 4);
     raw_decode(buf);
     //metrics2string();
-    
   }
+
+  //SIM SERVER INPUT
+  unsigned long current  = millis();
+  if (current - prev == period) {
+    Serial.printf("%lu zoom request\n", current);
+    prev = current;
+    zoom_level = 3;
+    t_flag = 1;
+  }
+
+  //SENDING
+  if (t_flag == 1) {
+    if (Serial1.availableForWrite() >= 4) {
+      byte buf[4]; 
+      int2byte(zoom_level, buf);
+      Serial1.write(buf, 4);
+      t_flag = 0;
+      //Serial.printf("%lu zoom sent\n", current);
+    }
+  }
+  
 }
