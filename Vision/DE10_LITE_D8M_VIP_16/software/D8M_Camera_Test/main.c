@@ -5,6 +5,8 @@
 #include "terasic_includes.h"
 #include "mipi_camera_config.h"
 #include "mipi_bridge_config.h"
+#include "altera_avalon_uart.h"
+#include "altera_avalon_uart_regs.h"
 
 #include "auto_focus.h"
 
@@ -276,6 +278,8 @@ int main()
         	//printf("Failed to open UART\n");
         	while (1);
         }
+        int uart_0_fileno = fileno(ser);
+        fcntl(uart_0_fileno, F_SETFL, O_NONBLOCK);
 
   int state = 0;
   int buf[2];
@@ -386,23 +390,15 @@ int main()
 
        // read messages for zoom in and out-------------------
        unsigned char buf[4];
-       printf("test0\n");
 
-       // need to change here---------------------------
-
-	   buf = IORD(0x42020, 0);
-	   int tmp = byte2int(buf, 4);
-	   printf("test1\n");
-	   if (tmp == 1){
-		   MIPI_BIN_LEVEL(tmp);
-		   printf("set bin level to %d\n",tmp);
+	   if (fread(buf, 1, 4, ser) >= 4) {
+		   int zoom_level = byte2int(buf, 4);
+		   MIPI_BIN_LEVEL(zoom_level);
+		   printf("set bin level to %d\n", zoom_level);
 		   usleep(500000);
 	   }
-	   else if (tmp == 3){
-		   MIPI_BIN_LEVEL(tmp);
-		   printf("set bin level to %d\n",tmp);
-		   usleep(500000);
-	   }
+
+
 
 
 
