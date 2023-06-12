@@ -48,8 +48,13 @@
 #define MIPI_REG_FrmErrCnt		0x0080
 #define MIPI_REG_MDLErrCnt		0x0090
 
-#define width_30 73728
-#define height_30 78848
+
+// 30cm height!! yellow zoom 2: 93  zoom 3: 125, zoom 1: 77?
+
+// we choose zoom 2 for now
+
+#define width_30 73728 // pixel*1024
+#define height_30 95232
 
 void mipi_clear_error(void){
 	MipiBridgeRegWrite(MIPI_REG_CSIStatus,0x01FF); // clear error
@@ -128,6 +133,7 @@ bool MIPI_Init(void){
 	return bSuccess;
 }
 
+/*
 void beacons_dist(int words[8]) {
 	int w_x;
 	int dist;
@@ -159,6 +165,7 @@ void beacons_dist(int words[8]) {
 
 	}
 }
+*/
 
 int beacon_dist(int* buf) {
 	int w, h, dist;
@@ -166,7 +173,7 @@ int beacon_dist(int* buf) {
 	w = ((buf[1] >> 16) - (buf[0] >> 16)) & 0xFFFF;
 	h = ((buf[1] & 0xFFFF) - (buf[0] & 0xFFFF)) & 0xFFFF;
 
-	if( w > 100 || w < 10 || h > 100 || h < 10){
+	if( w > 150 || w < 50 || h > 150 || h < 50){  // need to tweak these values
 		dist = -1;
 	}
 	else if (w/h > 3 || h/w > 3){
@@ -176,7 +183,7 @@ int beacon_dist(int* buf) {
 		dist = ((height_30/h) * 300) >> 10;
 	}
 
-	return dist;
+	return dist;    // just for testing purposes!!!
 }
 
 int byte2int(unsigned char* buf, int size) {
@@ -373,8 +380,8 @@ int main()
     			   //printf("Error writing to UART");
     		   } else {
     			   char space = (state == 8) ? '\n' : ' ';
-    			   //printf("%08x",word_out);
-    			   //printf("%c",space);
+    			   printf("%08x",word_out);
+    			   printf("%c",space);
     		   }
     	   }
 
