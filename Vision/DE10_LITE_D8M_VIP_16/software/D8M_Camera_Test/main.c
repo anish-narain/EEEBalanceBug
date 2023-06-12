@@ -173,7 +173,7 @@ int beacon_dist(int* buf) {
 	w = ((buf[1] >> 16) - (buf[0] >> 16)) & 0xFFFF;
 	h = ((buf[1] & 0xFFFF) - (buf[0] & 0xFFFF)) & 0xFFFF;
 
-	if( w > 150 || w < 50 || h > 150 || h < 50){  // need to tweak these values
+	if( w > 200 || w < 20 || h > 200 || h < 20){  // need to tweak these values
 		dist = -1;
 	}
 	else if (w/h > 3 || h/w > 3){
