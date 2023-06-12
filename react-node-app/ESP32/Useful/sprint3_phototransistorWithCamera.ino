@@ -238,6 +238,9 @@ float sum = 0;
 float f;
 float b;
 float count = 0;
+int wallDir = 0;
+int wallCount = 0;
+bool canChangeDir = false;
 void loop() {
   if (Serial1.available() >= 4){
     byte buf[4];
@@ -280,21 +283,42 @@ void loop() {
 
     if (col_detect == true){
 
-      if (aF > -150 || aB > -150){
+      if (canChangeDir){
+        if (aF > -150){
+          wallDir = 1;
+        } else {
+          wallDir = -1;
+        }
+
+       canChangeDir = false;
+        
+      }
+
+      wallCount = 0;
+
+      if (wallDir == 1){
         direction = "Right";
-      } else {
+      }else{
         direction = "Left";
       }
+      
 
     }else{
 
-      if (avg < -100) {
-        direction = "Left";
-      } else if (avg > 100){
-        direction = "Right";
-      } else {
-        direction = "Up";
+      wallCount ++;
+      if (wallCount > 20){
+        canChangeDir = true;
       }
+
+        if (avg < -150 && canChangeDir) {
+          direction = "Left";
+        } else if (avg > 150 && canChangeDir){
+          direction = "Right";
+        } else {
+          direction = "Up";
+        }
+
+        
 
     }
     
