@@ -18,7 +18,7 @@ float gyroZe;
 //unsigned long start = 0;
 //unsigned long period = 500;
 
-unsigned int dist[3] = {0};
+int dist[3] = {0};
 int centre[2] = {0};
 bool col_detect = false;
 
@@ -223,7 +223,7 @@ void calibration_coor(float gyroZe) {
     // Update the current angle of the turn
     currentAngle += abs((float)g.gyro.z - gyroZe) * (Ts / 1000000);
     Serial.println(currentAngle);
-    /*
+    
     // Call the raw_decode function to update the dist array
     if (Serial1.available() >= 4){
       //Serial.print("MSG RECEIVED");
@@ -234,7 +234,13 @@ void calibration_coor(float gyroZe) {
       raw_decode(buf);
       //metrics2string();
       }
-    */
+    
+    for (int i = 0; i<3; i++){
+      Serial.print(dist[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+    
     // sum up all positive distance readings
     for (int i=0; i<3; i++){
       if (dist[i] > 0){
@@ -352,8 +358,22 @@ bool canChangeDir = false;
 unsigned long prev = 0;
 unsigned long period = 15000;
 
+int blockLeft = 0;
+int blockLeftDir = 0;
+
 void loop() {  
   /*
+  // Call the raw_decode function to update the dist array
+    if (Serial1.available() >= 4){
+      //Serial.print("MSG RECEIVED");
+      byte buf[4];
+      Serial1.readBytes(buf, 4);
+      int a = byte2int(buf, 4);
+      Serial.println(a, HEX);
+      raw_decode(buf);
+      //metrics2string();
+      }
+  
   //SIM SERVER INPUT
   unsigned long current  = millis();
   if (current - prev == period) {
@@ -400,6 +420,8 @@ void loop() {
     Serial.print(", ");
     Serial.print(avg);
     Serial.print(", ");
+    Serial.print(direction);
+    Serial.print(", ");
     Serial.println(col_detect);
 
     if (col_detect == true){
@@ -424,20 +446,38 @@ void loop() {
       }
       
 
-    }else{
+    }else{ // No wall in front
 
       wallCount ++;
       if (wallCount > 20){
         canChangeDir = true;
       }
 
-        if (avg < -150 && canChangeDir) {
-          direction = "Left";
-        } else if (avg > 150 && canChangeDir){
+      if (aF < -150 && canChangeDir && blockLeft == 0) {
+        direction = "Left";
+      } else if (aF > 150 && canChangeDir){
+        direction = "Right";
+      } else {
+        direction = "Up";
+      }
+
+      if (blockLeft > 0){
+        blockLeft -= 1;
+        blockLeftDir -= 1;
+
+        if (blockLeftDir > 0){
           direction = "Right";
-        } else {
+        }else{
           direction = "Up";
         }
+
+      }
+      if (avg < -400){
+        Serial.println("Blocked left");
+        blockLeft = 10;
+        blockLeftDir = 7;
+      }
+
     }
     
   }
