@@ -21,28 +21,13 @@ unsigned long start = 0;
 unsigned long period = 500;
 
 unsigned int dist[3] = {0};
-int centre[2] = {0};
-bool col_detect = false;
+bool col_detect = true;
+int zoom_level = 1;
+
+int r_state = -1;
+int t_flag = 0;
 
 float calibrate_x, calibrate_y; // used for coordinates calibration
-
-int state = -1;
-
-int byte2int(byte* buf, int size) {
-  int val=0;
-
-  for (int i=(size-1); i>=0; i--) {
-    val += buf[i] << (8*i);
-  }
-
-  return val;
-}
-
-void int2byte(int n, byte bytes[4]) {
-  for (int i=0; i<4; i++) {
-    bytes[i] = (n >> 8*i) & 0xFF;
-  }
-}
 
 void zoom(int zoom_level){
   if (Serial1.availableForWrite() >= 4) {
@@ -54,40 +39,69 @@ void zoom(int zoom_level){
     }
 }
 
+int byte2int(byte* buf, int size) {
+  int val=0;
 
+  for (int i=0; i<size; i++) {
+    val+= buf[i] << (8*i);
+  }
+
+  return val;
+}
+
+int byte2int_signed(byte* buf, int size) {
+  int val=0;
+
+  for (int i=0; i<(size-1); i++) {
+    val += buf[i] << (8*i);
+  }
+
+  int MSB = (signed char) buf[size-1];
+  val += MSB << (8*(size-1)); 
+
+  return val;
+}
+
+void int2byte(int n, byte bytes[4]) {
+  for (int i=0; i<4; i++) {
+    bytes[i] = (n >> 8*i) & 0xFF;
+  }
+}
 
 
 int raw_decode(byte* buf) {
 
+  int i;
+
   //start condition
   if (byte2int(buf, 4) == 0x00524242) {
-    state = 0;
+    r_state = 0;
   }
 
   //output
-  switch(state) {
+  switch(r_state) {
     case 0:
       break;
-    case 1: case 2: case 3:
-      dist[state-1] = byte2int(buf, 4);
-      break;
-    case 4:
-      col_detect = (bool)byte2int(buf, 4);
-      break;
-    case 5:
-      for (int i=0; i<2; i++) {
-        centre[i] = byte2int(buf+(i*2), 2);
+    case 1:
+      i = byte2int_signed(buf+3, 1);
+      if (i == -1) {
+        Serial.println("no beacons");
+      } else {
+        dist[i] = byte2int(buf, 3);
       }
+      break;
+    case 2:
+      col_detect = (bool)byte2int(buf, 4);
       break;
     default:
       break;
   }
 
-  //next state
-  if (state > -1 & state < 5) {
-    state++;
-  } else if (state == 5) {
-    state = -1;
+  //next r_state
+  if (r_state > -1 & r_state < 2) {
+    r_state++;
+  } else if (r_state == 2) {
+    r_state = -1;
   }
 
   return 0;
@@ -97,10 +111,8 @@ void metrics2string() {
   Serial.printf("dist_red = %d\n", dist[0]);
   Serial.printf("dist_yellow = %d\n", dist[1]);
   Serial.printf("dist_blue = %d\n", dist[2]);
-
   Serial.printf("col_detect = %d\n", col_detect);
   Serial.printf("beacon_x = %d\n", centre[0]);
-  Serial.printf("beacon_x to centre = %d\n", centre[1]);
 }
 
 //MOTOR STUFF=====================================================================
@@ -311,16 +323,35 @@ char dir = 'q';
 float lastTime, Ts;
 
 void loop() {
-  //Serial.printf("cA");
+
+  //RECEIVING
   if (Serial1.available() >= 4){
-    Serial.print("MSG RECEIVED");
     byte buf[4];
     Serial1.readBytes(buf, 4);
-    int a = byte2int(buf, 4);
-    Serial.println(a, HEX);
     raw_decode(buf);
     //metrics2string();
-    
+    int hex = byte2int(buf, 4);
+    Serial.printf("%x\n", hex);
+  }
+
+  //SIM SERVER INPUT
+  unsigned long current  = millis();
+  if (current - prev == period) {
+    Serial.printf("%lu zoom request\n", current);
+    prev = current;
+    zoom_level = 2;
+    t_flag = 1;
+  }
+
+  //SENDING
+  if (t_flag == 1) {
+    if (Serial1.availableForWrite() >= 4) {
+      byte buf[4]; 
+      int2byte(zoom_level, buf);
+      Serial1.write(buf, 4);
+      t_flag = 0;
+      //Serial.printf("%lu zoom sent\n", current);
+    }
   }
 
   if (col_detect == false){
@@ -346,8 +377,6 @@ void loop() {
     s1.control();
     s2.control();
   }
-    
-  
 
   sensors_event_t a, g, temp;
   mpu.getEvent(&a, &g, &temp); // Get sensor readings
