@@ -6,7 +6,6 @@
 #define TXD2 17 // FPGA side: (ARDUINO_IO[8]) 
 
 unsigned int dist[3] = {0};
-int centre[2] = {0};
 bool col_detect = true;
 int zoom_level = 1;
 
@@ -20,13 +19,22 @@ unsigned long period = 5000;
 int byte2int(byte* buf, int size) {
   int val=0;
 
-  // for (int i=(size-1); i>=0; i--) {
-  //   val += buf[i] << (8*i);
-  // }
-
   for (int i=0; i<size; i++) {
     val+= buf[i] << (8*i);
   }
+
+  return val;
+}
+
+int byte2int_signed(byte* buf, int size) {
+  int val=0;
+
+  for (int i=0; i<(size-1); i++) {
+    val += buf[i] << (8*i);
+  }
+
+  int MSB = (signed char) buf[size-1];
+  val += MSB << (8*(size-1)); 
 
   return val;
 }
@@ -39,6 +47,8 @@ void int2byte(int n, byte bytes[4]) {
 
 int raw_decode(byte* buf) {
 
+  int i;
+
   //start condition
   if (byte2int(buf, 4) == 0x00524242) {
     r_state = 0;
@@ -48,25 +58,26 @@ int raw_decode(byte* buf) {
   switch(r_state) {
     case 0:
       break;
-    case 1: case 2: case 3:
-      dist[r_state-1] = byte2int(buf, 4);
-      break;
-    case 4:
-      col_detect = (bool)byte2int(buf, 4);
-      break;
-    case 5:
-      for (int i=0; i<2; i++) {
-        centre[i] = byte2int(buf+(i*2), 2);
+    case 1:
+      i = byte2int_signed(buf+3, 1);
+      if (i == -1) {
+        Serial.println("no beacons");
+      } else {
+        dist[i] = byte2int(buf, 3);
+        Serial.printf("dist to beacon %d = %d mm\n", i, dist[i]);
       }
+      break;
+    case 2:
+      col_detect = (bool)byte2int(buf, 4);
       break;
     default:
       break;
   }
 
   //next r_state
-  if (r_state > -1 & r_state < 5) {
+  if (r_state > -1 & r_state < 2) {
     r_state++;
-  } else if (r_state == 5) {
+  } else if (r_state == 2) {
     r_state = -1;
   }
 
@@ -77,10 +88,7 @@ void metrics2string() {
   Serial.printf("dist_red = %d\n", dist[0]);
   Serial.printf("dist_yellow = %d\n", dist[1]);
   Serial.printf("dist_blue = %d\n", dist[2]);
-
   Serial.printf("col_detect = %d\n", col_detect);
-  Serial.printf("beacon_x = %d\n", centre[0]);
-  Serial.printf("beacon_x to centre = %d\n", centre[1]);
 }
 
 void setup() {
@@ -97,6 +105,8 @@ void loop() {
     Serial1.readBytes(buf, 4);
     raw_decode(buf);
     //metrics2string();
+    int hex = byte2int(buf, 4);
+    Serial.printf("%x\n", hex);
   }
 
   //SIM SERVER INPUT
@@ -104,7 +114,7 @@ void loop() {
   if (current - prev == period) {
     Serial.printf("%lu zoom request\n", current);
     prev = current;
-    zoom_level = 3;
+    zoom_level = 2;
     t_flag = 1;
   }
 
