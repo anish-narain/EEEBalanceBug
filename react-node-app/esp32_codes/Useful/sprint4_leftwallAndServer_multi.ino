@@ -427,7 +427,7 @@ float f;
 float b;
 float count = 0;
 int wallDir = 0;
-int wallCount = 0;
+int wallCount = 100;
 bool canChangeDir = false;
 unsigned long prev = 0;
 unsigned long period = 15000;
@@ -441,6 +441,8 @@ void motorTask(void* parameter) {
       byte buf[4];
       Serial1.readBytes(buf, 4);
       raw_decode(buf);
+      //int a = byte2int(buf,4);
+      //Serial.println(a, HEX);
     }
 
     lightSensorReadingFront = analogRead(32);
@@ -492,13 +494,15 @@ void motorTask(void* parameter) {
 
       } else {  // No wall in front
         wallCount++;
-        if (wallCount > 20) {
+        if (wallCount > 10) {
           canChangeDir = true;
         }
 
-        if (aF < -150 && canChangeDir && blockLeft == 0) {
+        if (aF < -100 && canChangeDir && blockLeft == 0) {
           direction = "Left";
         } else if (aF > 150 && canChangeDir) {
+          direction = "Right";
+        }else if (aF > 300 && !canChangeDir && wallDir == 1){
           direction = "Right";
         } else {
           direction = "Up";
@@ -619,15 +623,6 @@ void setup() {
   gyroZe = g.gyro.z;
   Serial.println("Done");
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
-
-  Serial.println("Connected to WiFi");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
 
   for (int i = 0; i < 50; i++) {
     lightSensorReadingFront = analogRead(32);
@@ -644,9 +639,20 @@ void setup() {
   Serial.println(avgError);
   delay(100);
 
-  // Create tasks for HTTP GET/POST and motor control
+
+  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);// Runs on core 1
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+
+  Serial.println("Connected to WiFi");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
   xTaskCreatePinnedToCore(httpGetPostTask, "HttpGetPostTask", 8192, NULL, 1, NULL, 0);  // Runs on core 0
-  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);              // Runs on core 1
 }
 
 
