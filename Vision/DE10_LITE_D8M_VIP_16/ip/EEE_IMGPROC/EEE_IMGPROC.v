@@ -351,7 +351,7 @@ always@(posedge clk) begin
 	//Cycle through message writer states once started
 	if (msg_state != 4'b0000)
 		begin
-			if (msg_state == 4'b1001)  msg_state <= 4'b0000;
+			if (msg_state == 4'b1000)  msg_state <= 4'b0000;
 			else msg_state <= msg_state + 4'b0001;
 		end
 
@@ -411,11 +411,6 @@ always@(*) begin	//Write words to FIFO as state machine advances
 			msg_buf_in = {21'b0, front_detect};
 			msg_buf_wr = 1'b1;
 		end
-		4'b1001: begin
-			msg_buf_in = {5'b0, center_x, 5'b0, center_error};
-			msg_buf_wr = 1'b1;
-		end
-		
 	endcase
 end
 
