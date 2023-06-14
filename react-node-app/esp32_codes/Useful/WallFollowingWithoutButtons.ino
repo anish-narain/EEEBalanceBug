@@ -22,7 +22,7 @@ float gyroZe;
 //unsigned long start = 0;
 //unsigned long period = 500;
 
-unsigned int dist[3] = {0};
+unsigned int dist[3] = { 0 };
 bool col_detect = true;
 int zoom_level = 1;
 
@@ -31,46 +31,46 @@ int t_flag = 0;
 
 unsigned long prev = 0;
 unsigned long period = 30000;
-float calibrate_x, calibrate_y; // used for coordinates calibration
+float calibrate_x, calibrate_y;  // used for coordinates calibration
 
 
 int byte2int(byte* buf, int size) {
-  int val=0;
+  int val = 0;
 
-  for (int i=0; i<size; i++) {
-    val+= buf[i] << (8*i);
+  for (int i = 0; i < size; i++) {
+    val += buf[i] << (8 * i);
   }
 
   return val;
 }
 
 int byte2int_signed(byte* buf, int size) {
-  int val=0;
+  int val = 0;
 
-  for (int i=0; i<(size-1); i++) {
-    val += buf[i] << (8*i);
+  for (int i = 0; i < (size - 1); i++) {
+    val += buf[i] << (8 * i);
   }
 
-  int MSB = (signed char) buf[size-1];
-  val += MSB << (8*(size-1)); 
+  int MSB = (signed char)buf[size - 1];
+  val += MSB << (8 * (size - 1));
 
   return val;
 }
 
 void int2byte(int n, byte bytes[4]) {
-  for (int i=0; i<4; i++) {
-    bytes[i] = (n >> 8*i) & 0xFF;
+  for (int i = 0; i < 4; i++) {
+    bytes[i] = (n >> 8 * i) & 0xFF;
   }
 }
 
-void zoom(int zoom_level){
+void zoom(int zoom_level) {
   if (Serial1.availableForWrite() >= 4) {
-      byte buf[4]; 
-      int2byte(zoom_level, buf);
-      Serial1.write(buf, 4);
-      Serial.printf("%lu zoom sent\n", zoom_level);
-      delay(100);
-    }
+    byte buf[4];
+    int2byte(zoom_level, buf);
+    Serial1.write(buf, 4);
+    Serial.printf("%lu zoom sent\n", zoom_level);
+    delay(100);
+  }
 }
 
 int raw_decode(byte* buf) {
@@ -83,11 +83,11 @@ int raw_decode(byte* buf) {
   }
 
   //output
-  switch(r_state) {
+  switch (r_state) {
     case 0:
       break;
     case 1:
-      i = byte2int_signed(buf+3, 1);
+      i = byte2int_signed(buf + 3, 1);
       if (i == -1) {
         Serial.println("no beacons");
       } else {
@@ -118,8 +118,6 @@ void metrics2string() {
   Serial.printf("dist_blue = %d\n", dist[2]);
 
   Serial.printf("col_detect = %d\n", col_detect);
-  Serial.printf("beacon_x = %d\n", centre[0]);
-  Serial.printf("beacon_x to centre = %d\n", centre[1]);
 }
 
 //MOTOR and Server STUFF=====================================================================
@@ -140,15 +138,16 @@ int start_coordinates[2];
 int current_coordinates[2];
 String left_following;
 String wall_detection = "true";  //fixed rn, need to change
-String maze_complete = "false";   //fixed rn, need to change
+String maze_complete = "false";  //fixed rn, need to change
 String mvmt_direction;
 String server_direction = "Up";
 String prev_direction;  //need this for null inputs
-
+String recalibrateFlag;
 
 //Function declarations for traversal algorithm
 void roverLeftFollow();
 String extractDirection(const String& jsonString);
+String parseJson(const String& json, const String& key);
 void roverMotion(String direction);
 
 class stepperMotor {
@@ -225,16 +224,22 @@ int calibration_coor(float gyroZe) {
   float currentAngle = 0.0; // Current angle of the turn
   float lastTime = micros(); // Last time recorded
 
+ 
+
   // dimension of the arena
   int height = 340;
   int width = 225;
-  
+
   int sum_dist[3] = {0};    // red, blue, yellow
   int count[3] = {0};
   int avg_dist[3] = {0};
 
+ 
+
   // zoom in the camera for calibration
   zoom(2);
+
+ 
 
   // Stop the motors
   s1.stop();
@@ -242,8 +247,10 @@ int calibration_coor(float gyroZe) {
   s1.control();
   s2.control();
 
+ 
+
   while (currentAngle < targetAngle) {
-    
+
     // Rotate the robot in place, can be replaced by left turn -------------------------
     s1.start();
     s2.start();
@@ -252,6 +259,8 @@ int calibration_coor(float gyroZe) {
     s1.control();
     s2.control();
 
+ 
+
     // Update the current angle based on the gyro reading (not sure if we still need to update current angle)
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
@@ -259,10 +268,12 @@ int calibration_coor(float gyroZe) {
     lastTime = micros();
     bearing += ((float)g.gyro.z - gyroZe) * (Ts / 1000000); // Integrate angular velocity with respect to time
 
+ 
+
     // Update the current angle of the turn
     currentAngle += abs((float)g.gyro.z - gyroZe) * (Ts / 1000000);
     Serial.println(currentAngle);
-    
+
     // Call the raw_decode function to update the dist array
     if (Serial1.available() >= 4){
       //Serial.print("MSG RECEIVED");
@@ -273,13 +284,13 @@ int calibration_coor(float gyroZe) {
       raw_decode(buf);
       //metrics2string();
       }
-    
+
     for (int i = 0; i<3; i++){
       Serial.print(dist[i]);
       Serial.print(" ");
     }
     Serial.println("");
-    
+
     // sum up all positive distance readings
     for (int i=0; i<3; i++){
       if (dist[i] > 0){
@@ -287,10 +298,12 @@ int calibration_coor(float gyroZe) {
         count[i] += 1;
       }
     }
-        
+
     // Delay to control the speed of the turn
     delay(10); // Adjust the delay value to control the speed of the turn
   }
+
+ 
 
   // Stop the motors after completing the turn
   s1.stop();
@@ -298,35 +311,70 @@ int calibration_coor(float gyroZe) {
   s1.control();
   s2.control();
 
-  // calculate average distance of all three
-  for (int i=0; i<3; i++){
-      if (count[i] == 0){
-        Serial.printf("Error detecting beacon %d\n", i); 
-        return 0;
-      }
-      else{
-      avg_dist[i] = sum_dist[i] / count[i];
-      }
-    }
+ 
 
   // zoom out the camera
   zoom(1);
-  
-  // calculate x and y coordinates
-  float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2)/(2*avg_dist[0]*width)));
-  float x1 = avg_dist[0]*cos(beta);
-  float y1 = height - avg_dist[0]*sin(beta);
 
-  float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2)/(2*avg_dist[2]*width)));
-  float x2 = width - avg_dist[2]*sin(gamma);
-  float y2 = height - avg_dist[2]*cos(gamma);
+ 
 
-  calibrate_x = (x1+x2)/2;
-  calibrate_y = (y1+y2)/2;
-  
-  Serial.printf("calibrate_x %x\n", calibrate_x); 
-  Serial.printf("calibrate_x %x\n", calibrate_y); 
-  
+  if ((count[0]!=0 & count[2]!=0)){
+    avg_dist[0] = sum_dist[0] / count[0];
+    avg_dist[2] = sum_dist[2] / count[2];
+
+    // calculate x and y coordinates
+    float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2)/(2*avg_dist[0]*width)));
+    float x1 = avg_dist[0]*cos(beta);
+    float y1 = height - avg_dist[0]*sin(beta);
+
+    calibrate_x = x1;
+    calibrate_y = y1;
+
+    Serial.printf("calibrate_x %x\n", calibrate_x); 
+    Serial.printf("calibrate_x %x\n", calibrate_y); 
+  }
+  else if ((count[1]!=0 & count[2]!=0)){
+    avg_dist[1] = sum_dist[1] / count[1];
+    avg_dist[2] = sum_dist[2] / count[2];
+
+    float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2)/(2*avg_dist[2]*width)));
+    float x2 = width - avg_dist[2]*sin(gamma);
+    float y2 = height - avg_dist[2]*cos(gamma);
+
+    calibrate_x = x2;
+    calibrate_y = y2;
+
+    Serial.printf("calibrate_x %x\n", calibrate_x); 
+    Serial.printf("calibrate_x %x\n", calibrate_y); 
+  }
+  else if ((count[1]!=0 & count[2]!=0 & count[0]!=0)){
+    for (int i=0; i<3; i++){
+      avg_dist[i] = sum_dist[i] / count[i];
+    }
+    // calculate x and y coordinates
+    float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2)/(2*avg_dist[0]*width)));
+    float x1 = avg_dist[0]*cos(beta);
+    float y1 = height - avg_dist[0]*sin(beta);
+
+    float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2)/(2*avg_dist[2]*width)));
+    float x2 = width - avg_dist[2]*sin(gamma);
+    float y2 = height - avg_dist[2]*cos(gamma);
+
+    calibrate_x = (x1+x2)/2;
+    calibrate_y = (y1+y2)/2;
+
+    Serial.printf("calibrate_x %x\n", calibrate_x); 
+    Serial.printf("calibrate_x %x\n", calibrate_y); 
+  }
+
+  else {
+    Serial.println("Error detecting enough beacons"); 
+    return 0;
+
+  }
+
+ 
+
   return 1;
 }
 
@@ -356,6 +404,7 @@ void httpGetPostTask(void* parameter) {
     HTTPClient httpPOST_roverCoordinates;
     HTTPClient httpPOST_wallDetection;
     HTTPClient httpGET_nextDirection;
+    HTTPClient httpGET_recalibrate;
 
     //POST ENDPOINTS Setup ==========================================================
     current_coordinates[0] = coordinates[0];
@@ -374,6 +423,9 @@ void httpGetPostTask(void* parameter) {
     //GET ENDPOINTS Setup ============================================================
     String GetEndpoint_nextDirection = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirection";
     httpGET_nextDirection.begin(GetEndpoint_nextDirection);  // Specify the server address and endpoint
+
+    String GetEndpoint_recalibrate = "http://" + String(serverAddress) + ":" + String(serverPort) + "/recalibrate";
+    httpGET_recalibrate.begin(GetEndpoint_recalibrate);  // Specify the server address and endpoint
 
 
     //roverCoordinates POST Code =====================================================================
@@ -433,10 +485,29 @@ void httpGetPostTask(void* parameter) {
       //move in mvmt_direction
     }
 
+    //recalibrateFlag = GET recalibrate ================================================================
+    int httpResponseCodeGet_recalibrate = httpGET_recalibrate.GET();
+
+    if (httpResponseCodeGet_recalibrate > 0) {
+      //Serial.print("HTTP Response code for recalibration: ");
+      //Serial.println(httpResponseCodeGet_recalibrate);
+      String receivedRecalibration = httpGET_recalibrate.getString();
+      recalibrateFlag = parseJson(receivedRecalibration, "Recalibrate");
+      //Serial.print("Recalibrate Flag: ");
+      //Serial.println(recalibrateFlag);
+      if (recalibrateFlag == "true"){
+        Serial.println(recalibrateFlag);
+      }
+    } else {
+      Serial.print("Error code for recalibrate: ");
+      Serial.println(httpResponseCodeGet_recalibrate);
+    }
+
     // Free resources
     httpPOST_roverCoordinates.end();
     httpPOST_wallDetection.end();
     httpGET_nextDirection.end();
+    httpGET_recalibrate.end();
 
     //delay(500);  // Wait for 0.5 seconds before sending the next request
   }
@@ -453,8 +524,6 @@ float count = 0;
 int wallDir = 0;
 int wallCount = 100;
 bool canChangeDir = false;
-unsigned long prev = 0;
-unsigned long period = 15000;
 
 int blockLeft = 0;
 int blockLeftDir = 0;
@@ -483,7 +552,7 @@ void motorTask(void* parameter) {
       float avg = sum / 50;
       float aF = f / 50;
       float aB = b / 50;
-      float aT = t/50;
+      float aT = t / 50;
       count = 0;
       sum = 0;
       f = 0;
@@ -502,7 +571,7 @@ void motorTask(void* parameter) {
       Serial.print(", ");
       Serial.println(col_detect);
 
-      aF = aF - aT; // Remove ambient light
+      aF = aF - aT;  // Remove ambient light
 
       if (col_detect == true) {
         if (canChangeDir) {
@@ -534,7 +603,7 @@ void motorTask(void* parameter) {
           direction = "Left";
         } else if (aF > 150 && canChangeDir) {
           direction = "Right";
-        }else if (aF > 300 && !canChangeDir && wallDir == 1){
+        } else if (aF > 300 && !canChangeDir && wallDir == 1) {
           direction = "Right";
         } else {
           direction = "Up";
@@ -602,23 +671,23 @@ void motorTask(void* parameter) {
     }
 
 
-  
-  coordinates[0] = x;
-  coordinates[1] = y;
 
-  printCount++;
-  if (printCount == 1000){
-      
+    coordinates[0] = x;
+    coordinates[1] = y;
+
+    printCount++;
+    if (printCount == 1000) {
+
       Serial.print("X: ");
       Serial.print(x);
       Serial.print(", Y: ");
       Serial.print(y);
       Serial.print(", Dir: ");
       Serial.println(bearing);
-      
+
       printCount = 0;
-  }
-  
+    }
+
 
     //delay(0);  // Wait for 0.5 seconds before sending the next request
   }
@@ -675,7 +744,7 @@ void setup() {
   delay(100);
 
 
-  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);// Runs on core 1
+  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);  // Runs on core 1
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -719,6 +788,33 @@ String extractDirection(const String& jsonString) {
   String direction = doc["Direction"].as<String>();
 
   return direction;
+}
+
+// Function to parse JSON and retrieve value of a specified key
+String parseJson(const String& json, const String& key) {
+  // Create a JSON document
+  StaticJsonDocument<200> doc;
+
+  // Parse the received JSON
+  DeserializationError error = deserializeJson(doc, json);
+
+  // Check for parsing errors
+  if (error) {
+    Serial.print("Error parsing JSON: ");
+    Serial.println(error.c_str());
+    return "";  // Return an empty string if there's an error
+  }
+
+  // Retrieve the value of the specified key
+  const char* value = doc[key.c_str()];
+
+  // Check if the key exists in the JSON
+  if (value) {
+    return String(value);  // Return the value as a string
+  } else {
+    //Serial.println("Key not found in JSON");
+    return "null";  // Return an empty string if the key is not found
+  }
 }
 
 void roverMotion(String direction) {
