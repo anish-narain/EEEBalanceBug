@@ -122,15 +122,17 @@ int start_coordinates[2];
 int current_coordinates[2];
 String left_following;
 String wall_detection = "true";  //fixed rn, need to change
-String maze_complete = "false";   //fixed rn, need to change
+String maze_complete = "false";  //fixed rn, need to change
 String mvmt_direction;
 String server_direction = "Up";
 String prev_direction;  //need this for null inputs
+String recalibrateFlag;
 
 
 //Function declarations for traversal algorithm
 void roverLeftFollow();
 String extractDirection(const String& jsonString);
+String parseJson(const String& json, const String& key);
 void roverMotion(String direction);
 
 class stepperMotor {
@@ -333,6 +335,7 @@ void httpGetPostTask(void* parameter) {
     HTTPClient httpPOST_roverCoordinates;
     HTTPClient httpPOST_wallDetection;
     HTTPClient httpGET_nextDirection;
+    HTTPClient httpGET_recalibrate;
 
     //POST ENDPOINTS Setup ==========================================================
     current_coordinates[0] = coordinates[0];
@@ -351,6 +354,9 @@ void httpGetPostTask(void* parameter) {
     //GET ENDPOINTS Setup ============================================================
     String GetEndpoint_nextDirection = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirection";
     httpGET_nextDirection.begin(GetEndpoint_nextDirection);  // Specify the server address and endpoint
+
+    String GetEndpoint_recalibrate = "http://" + String(serverAddress) + ":" + String(serverPort) + "/recalibrate";
+    httpGET_recalibrate.begin(GetEndpoint_recalibrate);  // Specify the server address and endpoint
 
 
     //roverCoordinates POST Code =====================================================================
@@ -410,10 +416,26 @@ void httpGetPostTask(void* parameter) {
       //move in mvmt_direction
     }
 
+    //recalibrateFlag = GET recalibrate ================================================================
+    int httpResponseCodeGet_recalibrate = httpGET_recalibrate.GET();
+
+    if (httpResponseCodeGet_recalibrate > 0) {
+      //Serial.print("HTTP Response code for recalibration: ");
+      //Serial.println(httpResponseCodeGet_recalibrate);
+      String receivedRecalibration = httpGET_recalibrate.getString();
+      recalibrateFlag = parseJson(receivedRecalibration, "Recalibrate");
+      //Serial.print("Recalibrate Flag: ");
+      //Serial.println(recalibrateFlag);
+    } else {
+      Serial.print("Error code for recalibrate: ");
+      Serial.println(httpResponseCodeGet_recalibrate);
+    }
+
     // Free resources
     httpPOST_roverCoordinates.end();
     httpPOST_wallDetection.end();
     httpGET_nextDirection.end();
+    httpGET_recalibrate.end();
 
     //delay(500);  // Wait for 0.5 seconds before sending the next request
   }
@@ -462,6 +484,7 @@ void motorTask(void* parameter) {
       f = 0;
       b = 0;
       //Serial.println(avg);
+      
       Serial.print(aF);
       Serial.print(", ");
       Serial.print(aB);
@@ -471,7 +494,7 @@ void motorTask(void* parameter) {
       Serial.print(direction);
       Serial.print(", ");
       Serial.println(col_detect);
-
+      
       if (col_detect == true) {
         if (canChangeDir) {
           if (aF > -150) {
@@ -498,11 +521,11 @@ void motorTask(void* parameter) {
           canChangeDir = true;
         }
 
-        if (aF < -100 && canChangeDir && blockLeft == 0) {
+        if (aB < -100 && canChangeDir && blockLeft == 0) {
           direction = "Left";
-        } else if (aF > 150 && canChangeDir) {
+        } else if (aB > 500 && canChangeDir) {
           direction = "Right";
-        }else if (aF > 300 && !canChangeDir && wallDir == 1){
+        } else if ((aF > 500 || aB > 800) && !canChangeDir && wallDir == 1) {
           direction = "Right";
         } else {
           direction = "Up";
@@ -518,10 +541,11 @@ void motorTask(void* parameter) {
             direction = "Up";
           }
         }
+
         if (avg < -400) {
           Serial.println("Blocked left");
-          blockLeft = 10;
-          blockLeftDir = 7;
+          blockLeft = 5;
+          blockLeftDir = 2;
         }
       }
     }
@@ -570,12 +594,12 @@ void motorTask(void* parameter) {
     }
 
 
-  
-  coordinates[0] = x;
-  coordinates[1] = y;
 
-  printCount++;
-  if (printCount == 1000){
+    coordinates[0] = x;
+    coordinates[1] = y;
+
+    printCount++;
+    if (printCount == 1000) {
       
       Serial.print("X: ");
       Serial.print(x);
@@ -585,8 +609,8 @@ void motorTask(void* parameter) {
       Serial.println(bearing);
       
       printCount = 0;
-  }
-  
+    }
+
 
     //delay(0);  // Wait for 0.5 seconds before sending the next request
   }
@@ -640,7 +664,7 @@ void setup() {
   delay(100);
 
 
-  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);// Runs on core 1
+  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);  // Runs on core 1
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
@@ -685,6 +709,36 @@ String extractDirection(const String& jsonString) {
 
   return direction;
 }
+
+// Function to parse JSON and retrieve value of a specified key
+String parseJson(const String& json, const String& key) {
+  // Create a JSON document
+  StaticJsonDocument<200> doc;
+
+  // Parse the received JSON
+  DeserializationError error = deserializeJson(doc, json);
+
+  // Check for parsing errors
+  if (error) {
+    Serial.print("Error parsing JSON: ");
+    Serial.println(error.c_str());
+    return "";  // Return an empty string if there's an error
+  }
+
+  // Retrieve the value of the specified key
+  const char* value = doc[key.c_str()];
+
+  // Check if the key exists in the JSON
+  if (value) {
+    return String(value);  // Return the value as a string
+  } else {
+    //Serial.println("Key not found in JSON");
+    return "null";  // Return an empty string if the key is not found
+  }
+}
+
+
+
 
 void roverMotion(String direction) {
   if (direction == "Up") {
