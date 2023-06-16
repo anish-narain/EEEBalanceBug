@@ -9,11 +9,15 @@
 Adafruit_MPU6050 mpu;
 float gyroZe;
 
-#define dirPin1 12
-#define stepPin1 14
-#define dirPin2 27
-#define stepPin2 26
+#define dirPin1 18
+#define stepPin1 19
+#define dirPin2 5
+#define stepPin2 23
 #define stepsPerRevolution 200
+
+#define pinF 33
+#define pinB 35
+#define pinT 32
 
 //UART STUFF=====================================================================
 #define RXD2 16  // FPGA side: (ARDUINO_IO[9]) yellow
@@ -581,9 +585,9 @@ void motorTask(void* parameter) {
       calibration_coor(gyroZe);
     }
     */
-    lightSensorReadingFront = analogRead(32);
-    lightSensorReadingBack = analogRead(33);
-    lightSensorReadingTop = analogRead(35);
+    lightSensorReadingFront = analogRead(pinF);
+    lightSensorReadingBack = analogRead(pinB);
+    lightSensorReadingTop = analogRead(pinT);
 
     sum += lightSensorReadingFront - lightSensorReadingBack - avgError;
     f += lightSensorReadingFront - avgF;
@@ -638,34 +642,35 @@ void motorTask(void* parameter) {
 
       } else {  // No wall in front
         wallCount++;
-        if (wallCount > 10) {
+        if (wallCount > 8) {
           canChangeDir = true;
         }
 
-        if (aF < -100 && canChangeDir && blockLeft == 0) {
+        if (aF < -500 && canChangeDir && blockLeft == 0) {
           direction = "Left";
-        } else if (aF > 150 && canChangeDir) {
+        } else if (aF > 250 && canChangeDir) {
           direction = "Right";
-        } else if (aF > 300 && !canChangeDir && wallDir == 1) {
+        } else if (aF > 400 && !canChangeDir && wallDir == 1) {
           direction = "Right";
         } else {
           direction = "Up";
         }
 
         if (blockLeft > 0) {
-          blockLeft -= 1;
-          blockLeftDir -= 1;
 
           if (blockLeftDir > 0) {
             direction = "Right";
           } else {
             direction = "Up";
           }
+
+          blockLeft -= 1;
+          blockLeftDir -= 1;
         }
-        if (avg < -400) {
+        if (aB < 800) {
           Serial.println("Blocked left");
-          blockLeft = 6;
-          blockLeftDir = 3;
+          blockLeft = 1;
+          blockLeftDir = 1;
         }
       }
     }
@@ -771,9 +776,9 @@ void setup() {
 
 
   for (int i = 0; i < 50; i++) {
-    lightSensorReadingFront = analogRead(32);
-    lightSensorReadingBack = analogRead(33);
-    lightSensorReadingTop = analogRead(35);
+    lightSensorReadingFront = analogRead(pinF);
+    lightSensorReadingBack = analogRead(pinB);
+    lightSensorReadingTop = analogRead(pinT);
     errorSum += lightSensorReadingFront - lightSensorReadingBack;
     errorF += lightSensorReadingFront;
     errorB += lightSensorReadingBack;
