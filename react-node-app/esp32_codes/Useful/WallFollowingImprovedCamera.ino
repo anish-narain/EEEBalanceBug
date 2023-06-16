@@ -93,7 +93,7 @@ int raw_decode(byte* buf) {
     case 1:
       i = byte2int_signed(buf + 3, 1);
       if (i == -1) {
-        Serial.println("no beacons");
+        //Serial.println("no beacons");
         for (int j=0; j<3; j++){
             dist[j] = 0;
         } 
@@ -101,7 +101,7 @@ int raw_decode(byte* buf) {
         for (int j=0; j<3; j++){
           if (i==j){
             dist[j] = byte2int(buf, 3);
-            Serial.printf("dist to beacon %d = %d mm\n", i, dist[i]);
+            //Serial.printf("dist to beacon %d = %d mm\n", i, dist[i]);
           }
           else{
             dist[j] = 0;
@@ -444,7 +444,7 @@ void httpGetPostTask(void* parameter) {
     HTTPClient httpPOST_roverCoordinates;
     HTTPClient httpPOST_wallDetection;
     HTTPClient httpGET_nextDirection;
-    HTTPClient httpGET_recalibrate;
+    //HTTPClient httpGET_recalibrate;
 
     //POST ENDPOINTS Setup ==========================================================
     current_coordinates[0] = coordinates[0];
@@ -464,8 +464,8 @@ void httpGetPostTask(void* parameter) {
     String GetEndpoint_nextDirection = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirection";
     httpGET_nextDirection.begin(GetEndpoint_nextDirection);  // Specify the server address and endpoint
 
-    String GetEndpoint_recalibrate = "http://" + String(serverAddress) + ":" + String(serverPort) + "/recalibrate";
-    httpGET_recalibrate.begin(GetEndpoint_recalibrate);  // Specify the server address and endpoint
+    //String GetEndpoint_recalibrate = "http://" + String(serverAddress) + ":" + String(serverPort) + "/recalibrate";
+    //httpGET_recalibrate.begin(GetEndpoint_recalibrate);  // Specify the server address and endpoint
 
 
     //roverCoordinates POST Code =====================================================================
@@ -524,7 +524,7 @@ void httpGetPostTask(void* parameter) {
     } else {
       //move in mvmt_direction
     }
-
+    /*
     //recalibrateFlag = GET recalibrate ================================================================
     int httpResponseCodeGet_recalibrate = httpGET_recalibrate.GET();
 
@@ -539,15 +539,16 @@ void httpGetPostTask(void* parameter) {
         Serial.println(recalibrateFlag);
       }
     } else {
-      Serial.print("Error code for recalibrate: ");
-      Serial.println(httpResponseCodeGet_recalibrate);
+      //Serial.print("Error code for recalibrate: ");
+      //Serial.println(httpResponseCodeGet_recalibrate);
     }
+    */
 
     // Free resources
     httpPOST_roverCoordinates.end();
     httpPOST_wallDetection.end();
     httpGET_nextDirection.end();
-    httpGET_recalibrate.end();
+    //httpGET_recalibrate.end();
 
     //delay(500);  // Wait for 0.5 seconds before sending the next request
   }
@@ -575,8 +576,8 @@ void motorTask(void* parameter) {
       byte buf[4];
       Serial1.readBytes(buf, 4);
       raw_decode(buf);
-      //int a = byte2int(buf,4);
-      //Serial.println(a, HEX);
+      int a = byte2int(buf,4);
+      Serial.println(a, HEX);
     }
     
     /*
@@ -595,17 +596,20 @@ void motorTask(void* parameter) {
     t += lightSensorReadingTop - avgT;
 
     count += 1;
-    if (count == 50) {
-      float avg = sum / 50;
-      float aF = f / 50;
-      float aB = b / 50;
-      float aT = t / 50;
+    if (count == 10) { // 50
+      float avg = sum / 10;
+      float aF = f / 10;
+      float aB = b / 10;
+      float aT = t / 10;
       count = 0;
       sum = 0;
       f = 0;
       b = 0;
       t = 0;
       //Serial.println(avg);
+
+      aF = aF - aT;  // Remove ambient light
+
       Serial.print(aF);
       Serial.print(", ");
       Serial.print(aB);
@@ -618,11 +622,9 @@ void motorTask(void* parameter) {
       Serial.print(", ");
       Serial.println(col_detect);
 
-      aF = aF - aT;  // Remove ambient light
-
       if (col_detect == true) {
         if (canChangeDir) {
-          if (aF > -150) {
+          if (aF > -250) {
             wallDir = 1;
           } else {
             wallDir = -1;
@@ -639,21 +641,31 @@ void motorTask(void* parameter) {
           direction = "Left";
         }
 
+        if (aF > 800){
+          direction = "Right";
+        }
+
 
       } else {  // No wall in front
         wallCount++;
-        if (wallCount > 8) {
+        if (wallCount > 40) { // 8
           canChangeDir = true;
         }
 
-        if (aF < -500 && canChangeDir && blockLeft == 0) {
+        Serial.println(aF);
+
+        if (aB < -100 && canChangeDir && blockLeft == 0) {
           direction = "Left";
-        } else if (aF > 250 && canChangeDir) {
+          Serial.println("Left");
+        } else if (aB > 100 && canChangeDir) {
           direction = "Right";
-        } else if (aF > 400 && !canChangeDir && wallDir == 1) {
+          Serial.println("Turn away");
+        } else if (aB > 400 && !canChangeDir && wallDir == 1) {
           direction = "Right";
+          Serial.println("right");
         } else {
           direction = "Up";
+          Serial.println("up");
         }
 
         if (blockLeft > 0) {
@@ -667,7 +679,7 @@ void motorTask(void* parameter) {
           blockLeft -= 1;
           blockLeftDir -= 1;
         }
-        if (aB < 800) {
+        if (aB > 800) {
           Serial.println("Blocked left");
           blockLeft = 1;
           blockLeftDir = 1;
@@ -744,6 +756,7 @@ void motorTask(void* parameter) {
 
 
 void setup() {
+  delay(5000);
   Serial.begin(115200);
   Serial1.begin(115200, SERIAL_8N1, RXD2, TXD2);  //FPGA
 
@@ -772,7 +785,7 @@ void setup() {
   gyroZe = g.gyro.z;
   Serial.println("Done");
 
-  calibration_coor(gyroZe);
+  //calibration_coor(gyroZe);
 
 
   for (int i = 0; i < 50; i++) {
@@ -792,9 +805,12 @@ void setup() {
 
   Serial.println(avgError);
   delay(100);
+  
+  //reset buffer
+  zoom(6);
+  delay(100);
 
-
-  //xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);  // Runs on core 1
+  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);  // Runs on core 1
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
