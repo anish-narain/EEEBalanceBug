@@ -9,11 +9,19 @@
 Adafruit_MPU6050 mpu;
 float gyroZe;
 
-#define dirPin1 12
-#define stepPin1 14
-#define dirPin2 27
-#define stepPin2 26
+#define dirPin1 18
+#define stepPin1 19
+#define dirPin2 5
+#define stepPin2 23
 #define stepsPerRevolution 200
+
+#define pinF 33
+#define pinB 35
+#define pinT 32
+
+// back - grey
+// front - white
+// top - pink
 
 //UART STUFF=====================================================================
 #define RXD2 16  // FPGA side: (ARDUINO_IO[9]) yellow
@@ -448,9 +456,9 @@ void motorTask(void* parameter) {
       //Serial.println(a, HEX);
     }
 
-    lightSensorReadingFront = analogRead(32);
-    lightSensorReadingBack = analogRead(33);
-    lightSensorReadingTop = analogRead(35);
+    lightSensorReadingFront = analogRead(pinF);
+    lightSensorReadingBack = analogRead(pinB);
+    lightSensorReadingTop = analogRead(pinT);
 
     sum += lightSensorReadingFront - lightSensorReadingBack - avgError;
     f += lightSensorReadingFront - avgF;
@@ -469,6 +477,8 @@ void motorTask(void* parameter) {
       b = 0;
       t = 0;
       //Serial.println(avg);
+
+      aF = aF - aT; // Remove ambient light
       Serial.print(aF);
       Serial.print(", ");
       Serial.print(aB);
@@ -480,8 +490,6 @@ void motorTask(void* parameter) {
       Serial.print(direction);
       Serial.print(", ");
       Serial.println(col_detect);
-
-      aF = aF - aT; // Remove ambient light
 
       if (col_detect == true) {
         if (canChangeDir) {
@@ -505,31 +513,32 @@ void motorTask(void* parameter) {
 
       } else {  // No wall in front
         wallCount++;
-        if (wallCount > 10) {
+        if (wallCount > 8) {
           canChangeDir = true;
         }
 
-        if (aF < -250 && canChangeDir && blockLeft == 0) {
+        if (aF < -500 && canChangeDir && blockLeft == 0) {
           direction = "Left";
-        } else if (aF > 150 && canChangeDir) {
+        } else if (aF > 250 && canChangeDir) {
           direction = "Right";
-        }else if (aF > 300 && !canChangeDir && wallDir == 1){
+        }else if (aF > 400 && !canChangeDir && wallDir == 1){
           direction = "Right";
         } else {
           direction = "Up";
         }
 
         if (blockLeft > 0) {
-          blockLeft -= 1;
-          blockLeftDir -= 1;
 
           if (blockLeftDir > 0) {
             direction = "Right";
           } else {
             direction = "Up";
           }
+
+          blockLeft -= 1;
+          blockLeftDir -= 1;
         }
-        if (aB > 1000) {
+        if (aB > 800) {
           Serial.println("Blocked left");
           blockLeft = 1; // 4
           blockLeftDir = 1; // 2
@@ -636,9 +645,9 @@ void setup() {
 
 
   for (int i = 0; i < 50; i++) {
-    lightSensorReadingFront = analogRead(32);
-    lightSensorReadingBack = analogRead(33);
-    lightSensorReadingTop = analogRead(35);
+    lightSensorReadingFront = analogRead(pinF);
+    lightSensorReadingBack = analogRead(pinB);
+    lightSensorReadingTop = analogRead(pinT);
     errorSum += lightSensorReadingFront - lightSensorReadingBack;
     errorF += lightSensorReadingFront;
     errorB += lightSensorReadingBack;

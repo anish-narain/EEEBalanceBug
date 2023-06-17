@@ -90,9 +90,20 @@ int raw_decode(byte* buf) {
       i = byte2int_signed(buf + 3, 1);
       if (i == -1) {
         Serial.println("no beacons");
+        for (int j=0; j<3; j++){
+            dist[j] = 0;
+        } 
       } else {
-        dist[i] = byte2int(buf, 3);
-        Serial.printf("dist to beacon %d = %d mm\n", i, dist[i]);
+        for (int j=0; j<3; j++){
+          if (i==j){
+            dist[j] = byte2int(buf, 3);
+            Serial.printf("dist to beacon %d = %d mm\n", i, dist[i]);
+          }
+          else{
+            dist[j] = 0;
+          }
+        }
+        
       }
       break;
     case 2:
@@ -142,7 +153,7 @@ String maze_complete = "false";  //fixed rn, need to change
 String mvmt_direction;
 String server_direction = "Up";
 String prev_direction;  //need this for null inputs
-String recalibrateFlag;
+String recalibrateFlag = "false";
 
 //Function declarations for traversal algorithm
 void roverLeftFollow();
@@ -285,6 +296,7 @@ int calibration_coor(float gyroZe) {
       //metrics2string();
       }
 
+    // print each beacons distance each cycle
     for (int i = 0; i<3; i++){
       Serial.print(dist[i]);
       Serial.print(" ");
@@ -316,16 +328,40 @@ int calibration_coor(float gyroZe) {
   // zoom out the camera
   zoom(1);
 
- 
+  for (int i = 0; i<3; i++){
+     Serial.print("count");
+      Serial.print(count[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+
+  for (int i = 0; i<3; i++){
+     Serial.print("sum");
+      Serial.print(sum_dist[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
 
   if ((count[0]!=0 & count[2]!=0)){
+    
     avg_dist[0] = sum_dist[0] / count[0];
     avg_dist[2] = sum_dist[2] / count[2];
 
+    for (int i = 0; i<3; i++){
+     Serial.print("avg");
+      Serial.print(avg_dist[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+
     // calculate x and y coordinates
-    float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2)/(2*avg_dist[0]*width)));
+    float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2))/(2*avg_dist[0]*width));
     float x1 = avg_dist[0]*cos(beta);
     float y1 = height - avg_dist[0]*sin(beta);
+
+    Serial.println(beta);
+    Serial.println(x1);
+    Serial.println(y1);
 
     calibrate_x = x1;
     calibrate_y = y1;
@@ -337,7 +373,7 @@ int calibration_coor(float gyroZe) {
     avg_dist[1] = sum_dist[1] / count[1];
     avg_dist[2] = sum_dist[2] / count[2];
 
-    float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2)/(2*avg_dist[2]*width)));
+    float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2))/(2*avg_dist[2]*width));
     float x2 = width - avg_dist[2]*sin(gamma);
     float y2 = height - avg_dist[2]*cos(gamma);
 
@@ -352,11 +388,11 @@ int calibration_coor(float gyroZe) {
       avg_dist[i] = sum_dist[i] / count[i];
     }
     // calculate x and y coordinates
-    float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2)/(2*avg_dist[0]*width)));
+    float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2))/(2*avg_dist[0]*width));
     float x1 = avg_dist[0]*cos(beta);
     float y1 = height - avg_dist[0]*sin(beta);
 
-    float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2)/(2*avg_dist[2]*width)));
+    float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2))/(2*avg_dist[2]*width));
     float x2 = width - avg_dist[2]*sin(gamma);
     float y2 = height - avg_dist[2]*cos(gamma);
 
@@ -530,6 +566,7 @@ int blockLeftDir = 0;
 
 void motorTask(void* parameter) {
   while (1) {
+    
     if (Serial1.available() >= 4) {
       byte buf[4];
       Serial1.readBytes(buf, 4);
@@ -537,7 +574,13 @@ void motorTask(void* parameter) {
       //int a = byte2int(buf,4);
       //Serial.println(a, HEX);
     }
-
+    
+    /*
+    //RECALIBRATION CODE
+    if (recalibrateFlag == "true") {
+      calibration_coor(gyroZe);
+    }
+    */
     lightSensorReadingFront = analogRead(32);
     lightSensorReadingBack = analogRead(33);
     lightSensorReadingTop = analogRead(35);
@@ -724,6 +767,8 @@ void setup() {
   gyroZe = g.gyro.z;
   Serial.println("Done");
 
+  calibration_coor(gyroZe);
+
 
   for (int i = 0; i < 50; i++) {
     lightSensorReadingFront = analogRead(32);
@@ -744,7 +789,7 @@ void setup() {
   delay(100);
 
 
-  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);  // Runs on core 1
+  //xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);  // Runs on core 1
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {

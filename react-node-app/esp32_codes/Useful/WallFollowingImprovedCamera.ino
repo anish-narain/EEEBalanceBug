@@ -9,11 +9,15 @@
 Adafruit_MPU6050 mpu;
 float gyroZe;
 
-#define dirPin1 12
-#define stepPin1 14
-#define dirPin2 27
-#define stepPin2 26
+#define dirPin1 18
+#define stepPin1 19
+#define dirPin2 5
+#define stepPin2 23
 #define stepsPerRevolution 200
+
+#define pinF 33
+#define pinB 35
+#define pinT 32
 
 //UART STUFF=====================================================================
 #define RXD2 16  // FPGA side: (ARDUINO_IO[9]) yellow
@@ -23,19 +27,36 @@ float gyroZe;
 //unsigned long period = 500;
 
 unsigned int dist[3] = { 0 };
-int centre[2] = { 0 };
-bool col_detect = false;
+bool col_detect = true;
+int zoom_level = 1;
 
+int r_state = -1;
+int t_flag = 0;
+
+unsigned long prev = 0;
+unsigned long period = 30000;
 float calibrate_x, calibrate_y;  // used for coordinates calibration
 
-int state = -1;
 
 int byte2int(byte* buf, int size) {
   int val = 0;
 
-  for (int i = (size - 1); i >= 0; i--) {
+  for (int i = 0; i < size; i++) {
     val += buf[i] << (8 * i);
   }
+
+  return val;
+}
+
+int byte2int_signed(byte* buf, int size) {
+  int val = 0;
+
+  for (int i = 0; i < (size - 1); i++) {
+    val += buf[i] << (8 * i);
+  }
+
+  int MSB = (signed char)buf[size - 1];
+  val += MSB << (8 * (size - 1));
 
   return val;
 }
@@ -58,37 +79,49 @@ void zoom(int zoom_level) {
 
 int raw_decode(byte* buf) {
 
+  int i;
+
   //start condition
   if (byte2int(buf, 4) == 0x00524242) {
-    state = 0;
+    r_state = 0;
   }
 
   //output
-  switch (state) {
+  switch (r_state) {
     case 0:
       break;
     case 1:
-    case 2:
-    case 3:
-      dist[state - 1] = byte2int(buf, 4);
-      break;
-    case 4:
-      col_detect = (bool)byte2int(buf, 4);
-      break;
-    case 5:
-      for (int i = 0; i < 2; i++) {
-        centre[i] = byte2int(buf + (i * 2), 2);
+      i = byte2int_signed(buf + 3, 1);
+      if (i == -1) {
+        //Serial.println("no beacons");
+        for (int j=0; j<3; j++){
+            dist[j] = 0;
+        } 
+      } else {
+        for (int j=0; j<3; j++){
+          if (i==j){
+            dist[j] = byte2int(buf, 3);
+            //Serial.printf("dist to beacon %d = %d mm\n", i, dist[i]);
+          }
+          else{
+            dist[j] = 0;
+          }
+        }
+        
       }
+      break;
+    case 2:
+      col_detect = (bool)byte2int(buf, 4);
       break;
     default:
       break;
   }
 
-  //next state
-  if (state > -1 & state < 5) {
-    state++;
-  } else if (state == 5) {
-    state = -1;
+  //next r_state
+  if (r_state > -1 & r_state < 2) {
+    r_state++;
+  } else if (r_state == 2) {
+    r_state = -1;
   }
 
   return 0;
@@ -100,8 +133,6 @@ void metrics2string() {
   Serial.printf("dist_blue = %d\n", dist[2]);
 
   Serial.printf("col_detect = %d\n", col_detect);
-  Serial.printf("beacon_x = %d\n", centre[0]);
-  Serial.printf("beacon_x to centre = %d\n", centre[1]);
 }
 
 //MOTOR and Server STUFF=====================================================================
@@ -126,8 +157,7 @@ String maze_complete = "false";  //fixed rn, need to change
 String mvmt_direction;
 String server_direction = "Up";
 String prev_direction;  //need this for null inputs
-String recalibrateFlag;
-
+String recalibrateFlag = "false";
 
 //Function declarations for traversal algorithm
 void roverLeftFollow();
@@ -204,22 +234,27 @@ private:
 
 stepperMotor s1, s2;
 
-/*
-void calibration_coor(float gyroZe) {
+int calibration_coor(float gyroZe) {
   float targetAngle = 6.28; // Target angle for the turn
   float currentAngle = 0.0; // Current angle of the turn
   float lastTime = micros(); // Last time recorded
 
+ 
+
   // dimension of the arena
-  int height = 500;
-  int width = 350;
-  
+  int height = 340;
+  int width = 225;
+
   int sum_dist[3] = {0};    // red, blue, yellow
   int count[3] = {0};
   int avg_dist[3] = {0};
 
+ 
+
   // zoom in the camera for calibration
-  zoom(3);
+  zoom(2);
+
+ 
 
   // Stop the motors
   s1.stop();
@@ -227,8 +262,10 @@ void calibration_coor(float gyroZe) {
   s1.control();
   s2.control();
 
+ 
+
   while (currentAngle < targetAngle) {
-    
+
     // Rotate the robot in place, can be replaced by left turn -------------------------
     s1.start();
     s2.start();
@@ -237,6 +274,8 @@ void calibration_coor(float gyroZe) {
     s1.control();
     s2.control();
 
+ 
+
     // Update the current angle based on the gyro reading (not sure if we still need to update current angle)
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);
@@ -244,17 +283,12 @@ void calibration_coor(float gyroZe) {
     lastTime = micros();
     bearing += ((float)g.gyro.z - gyroZe) * (Ts / 1000000); // Integrate angular velocity with respect to time
 
-    // Adjust the current angle to be between 0 and 360 degrees
-    if (bearing < 0.0) {
-      bearing += 360.0;
-    } else if (bearing >= 360.0) {
-      bearing -= 360.0;
-    }
+ 
 
     // Update the current angle of the turn
     currentAngle += abs((float)g.gyro.z - gyroZe) * (Ts / 1000000);
     Serial.println(currentAngle);
-    
+
     // Call the raw_decode function to update the dist array
     if (Serial1.available() >= 4){
       //Serial.print("MSG RECEIVED");
@@ -265,13 +299,14 @@ void calibration_coor(float gyroZe) {
       raw_decode(buf);
       //metrics2string();
       }
-    
+
+    // print each beacons distance each cycle
     for (int i = 0; i<3; i++){
       Serial.print(dist[i]);
       Serial.print(" ");
     }
     Serial.println("");
-    
+
     // sum up all positive distance readings
     for (int i=0; i<3; i++){
       if (dist[i] > 0){
@@ -279,10 +314,12 @@ void calibration_coor(float gyroZe) {
         count[i] += 1;
       }
     }
-        
+
     // Delay to control the speed of the turn
     delay(10); // Adjust the delay value to control the speed of the turn
   }
+
+ 
 
   // Stop the motors after completing the turn
   s1.stop();
@@ -290,42 +327,114 @@ void calibration_coor(float gyroZe) {
   s1.control();
   s2.control();
 
-  // calculate average distance of all three
-  for (int i=0; i<3; i++){
-      avg_dist[i] = sum_dist[i] / count[i];
-    }
+ 
 
   // zoom out the camera
   zoom(1);
-  
-  // calculate x and y coordinates
-  float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2)/(2*avg_dist[0]*width)));
-  float x1 = avg_dist[0]*cos(beta);
-  float y1 = height - avg_dist[0]*sin(beta);
 
-  float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2)/(2*avg_dist[2]*width)));
-  float x2 = width - avg_dist[2]*sin(gamma);
-  float y2 = height - avg_dist[2]*cos(gamma);
+  for (int i = 0; i<3; i++){
+     Serial.print("count");
+      Serial.print(count[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
 
-  calibrate_x = (x1+x2)/2;
-  calibrate_y = (y1+y2)/2;
+  for (int i = 0; i<3; i++){
+     Serial.print("sum");
+      Serial.print(sum_dist[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+
+  if ((count[0]!=0 & count[2]!=0)){
+    
+    avg_dist[0] = sum_dist[0] / count[0];
+    avg_dist[2] = sum_dist[2] / count[2];
+
+    for (int i = 0; i<3; i++){
+     Serial.print("avg");
+      Serial.print(avg_dist[i]);
+      Serial.print(" ");
+    }
+    Serial.println("");
+
+    // calculate x and y coordinates
+    float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2))/(2*avg_dist[0]*width));
+    float x1 = avg_dist[0]*cos(beta);
+    float y1 = height - avg_dist[0]*sin(beta);
+
+    Serial.println(beta);
+    Serial.println(x1);
+    Serial.println(y1);
+
+    calibrate_x = x1;
+    calibrate_y = y1;
+
+    Serial.printf("calibrate_x %x\n", calibrate_x); 
+    Serial.printf("calibrate_x %x\n", calibrate_y); 
+  }
+  else if ((count[1]!=0 & count[2]!=0)){
+    avg_dist[1] = sum_dist[1] / count[1];
+    avg_dist[2] = sum_dist[2] / count[2];
+
+    float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2))/(2*avg_dist[2]*width));
+    float x2 = width - avg_dist[2]*sin(gamma);
+    float y2 = height - avg_dist[2]*cos(gamma);
+
+    calibrate_x = x2;
+    calibrate_y = y2;
+
+    Serial.printf("calibrate_x %x\n", calibrate_x); 
+    Serial.printf("calibrate_x %x\n", calibrate_y); 
+  }
+  else if ((count[1]!=0 & count[2]!=0 & count[0]!=0)){
+    for (int i=0; i<3; i++){
+      avg_dist[i] = sum_dist[i] / count[i];
+    }
+    // calculate x and y coordinates
+    float beta = acos((pow(avg_dist[0],2)+pow(width,2)-pow(avg_dist[2],2))/(2*avg_dist[0]*width));
+    float x1 = avg_dist[0]*cos(beta);
+    float y1 = height - avg_dist[0]*sin(beta);
+
+    float gamma = acos((pow(avg_dist[2],2)+pow(height,2)-pow(avg_dist[1],2))/(2*avg_dist[2]*width));
+    float x2 = width - avg_dist[2]*sin(gamma);
+    float y2 = height - avg_dist[2]*cos(gamma);
+
+    calibrate_x = (x1+x2)/2;
+    calibrate_y = (y1+y2)/2;
+
+    Serial.printf("calibrate_x %x\n", calibrate_x); 
+    Serial.printf("calibrate_x %x\n", calibrate_y); 
+  }
+
+  else {
+    Serial.println("Error detecting enough beacons"); 
+    return 0;
+
+  }
+
+ 
+
+  return 1;
 }
-*/
+
 int printCount;
 int input;  // Serial input data
 
 float errorSum = 0;
 float avgError = 0;
-
 float errorF = 0;
 float avgF = 0;
 float errorB = 0;
 float avgB = 0;
+float errorT = 0;
+float avgT = 0;
 
 //FOR Phototransistor ====================================================
 String direction;
 int lightSensorReadingFront = 0;
 int lightSensorReadingBack = 0;
+int lightSensorReadingTop = 0;
 //=========================================================================
 
 
@@ -335,7 +444,7 @@ void httpGetPostTask(void* parameter) {
     HTTPClient httpPOST_roverCoordinates;
     HTTPClient httpPOST_wallDetection;
     HTTPClient httpGET_nextDirection;
-    HTTPClient httpGET_recalibrate;
+    //HTTPClient httpGET_recalibrate;
 
     //POST ENDPOINTS Setup ==========================================================
     current_coordinates[0] = coordinates[0];
@@ -355,8 +464,8 @@ void httpGetPostTask(void* parameter) {
     String GetEndpoint_nextDirection = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirection";
     httpGET_nextDirection.begin(GetEndpoint_nextDirection);  // Specify the server address and endpoint
 
-    String GetEndpoint_recalibrate = "http://" + String(serverAddress) + ":" + String(serverPort) + "/recalibrate";
-    httpGET_recalibrate.begin(GetEndpoint_recalibrate);  // Specify the server address and endpoint
+    //String GetEndpoint_recalibrate = "http://" + String(serverAddress) + ":" + String(serverPort) + "/recalibrate";
+    //httpGET_recalibrate.begin(GetEndpoint_recalibrate);  // Specify the server address and endpoint
 
 
     //roverCoordinates POST Code =====================================================================
@@ -415,7 +524,7 @@ void httpGetPostTask(void* parameter) {
     } else {
       //move in mvmt_direction
     }
-
+    /*
     //recalibrateFlag = GET recalibrate ================================================================
     int httpResponseCodeGet_recalibrate = httpGET_recalibrate.GET();
 
@@ -426,16 +535,20 @@ void httpGetPostTask(void* parameter) {
       recalibrateFlag = parseJson(receivedRecalibration, "Recalibrate");
       //Serial.print("Recalibrate Flag: ");
       //Serial.println(recalibrateFlag);
+      if (recalibrateFlag == "true"){
+        Serial.println(recalibrateFlag);
+      }
     } else {
-      Serial.print("Error code for recalibrate: ");
-      Serial.println(httpResponseCodeGet_recalibrate);
+      //Serial.print("Error code for recalibrate: ");
+      //Serial.println(httpResponseCodeGet_recalibrate);
     }
+    */
 
     // Free resources
     httpPOST_roverCoordinates.end();
     httpPOST_wallDetection.end();
     httpGET_nextDirection.end();
-    httpGET_recalibrate.end();
+    //httpGET_recalibrate.end();
 
     //delay(500);  // Wait for 0.5 seconds before sending the next request
   }
@@ -447,57 +560,71 @@ float lastTime, Ts;
 float sum = 0;
 float f;
 float b;
+float t;
 float count = 0;
 int wallDir = 0;
 int wallCount = 100;
 bool canChangeDir = false;
-unsigned long prev = 0;
-unsigned long period = 15000;
 
 int blockLeft = 0;
 int blockLeftDir = 0;
 
 void motorTask(void* parameter) {
   while (1) {
+    
     if (Serial1.available() >= 4) {
       byte buf[4];
       Serial1.readBytes(buf, 4);
       raw_decode(buf);
-      //int a = byte2int(buf,4);
-      //Serial.println(a, HEX);
+      int a = byte2int(buf,4);
+      Serial.println(a, HEX);
     }
-
-    lightSensorReadingFront = analogRead(32);
-    lightSensorReadingBack = analogRead(33);  //NEED TO CHANGE
+    
+    /*
+    //RECALIBRATION CODE
+    if (recalibrateFlag == "true") {
+      calibration_coor(gyroZe);
+    }
+    */
+    lightSensorReadingFront = analogRead(pinF);
+    lightSensorReadingBack = analogRead(pinB);
+    lightSensorReadingTop = analogRead(pinT);
 
     sum += lightSensorReadingFront - lightSensorReadingBack - avgError;
     f += lightSensorReadingFront - avgF;
     b += lightSensorReadingBack - avgB;
+    t += lightSensorReadingTop - avgT;
 
     count += 1;
-    if (count == 50) {
-      float avg = sum / 50;
-      float aF = f / 50;
-      float aB = b / 50;
+    if (count == 10) { // 50
+      float avg = sum / 10;
+      float aF = f / 10;
+      float aB = b / 10;
+      float aT = t / 10;
       count = 0;
       sum = 0;
       f = 0;
       b = 0;
+      t = 0;
       //Serial.println(avg);
-      
+
+      aF = aF - aT;  // Remove ambient light
+
       Serial.print(aF);
       Serial.print(", ");
       Serial.print(aB);
+      Serial.print(", ");
+      Serial.print(aT);
       Serial.print(", ");
       Serial.print(avg);
       Serial.print(", ");
       Serial.print(direction);
       Serial.print(", ");
       Serial.println(col_detect);
-      
+
       if (col_detect == true) {
         if (canChangeDir) {
-          if (aF > -150) {
+          if (aF > -250) {
             wallDir = 1;
           } else {
             wallDir = -1;
@@ -514,38 +641,48 @@ void motorTask(void* parameter) {
           direction = "Left";
         }
 
+        if (aF > 800){
+          direction = "Right";
+        }
+
 
       } else {  // No wall in front
         wallCount++;
-        if (wallCount > 10) {
+        if (wallCount > 40) { // 8
           canChangeDir = true;
         }
 
+        Serial.println(aF);
+
         if (aB < -100 && canChangeDir && blockLeft == 0) {
           direction = "Left";
-        } else if (aB > 500 && canChangeDir) {
+          Serial.println("Left");
+        } else if (aB > 100 && canChangeDir) {
           direction = "Right";
-        } else if ((aF > 500 || aB > 800) && !canChangeDir && wallDir == 1) {
+          Serial.println("Turn away");
+        } else if (aB > 400 && !canChangeDir && wallDir == 1) {
           direction = "Right";
+          Serial.println("right");
         } else {
           direction = "Up";
+          Serial.println("up");
         }
 
         if (blockLeft > 0) {
-          blockLeft -= 1;
-          blockLeftDir -= 1;
 
           if (blockLeftDir > 0) {
             direction = "Right";
           } else {
             direction = "Up";
           }
-        }
 
-        if (avg < -400) {
+          blockLeft -= 1;
+          blockLeftDir -= 1;
+        }
+        if (aB > 800) {
           Serial.println("Blocked left");
-          blockLeft = 5;
-          blockLeftDir = 2;
+          blockLeft = 1;
+          blockLeftDir = 1;
         }
       }
     }
@@ -600,14 +737,14 @@ void motorTask(void* parameter) {
 
     printCount++;
     if (printCount == 1000) {
-      
+
       Serial.print("X: ");
       Serial.print(x);
       Serial.print(", Y: ");
       Serial.print(y);
       Serial.print(", Dir: ");
       Serial.println(bearing);
-      
+
       printCount = 0;
     }
 
@@ -619,6 +756,7 @@ void motorTask(void* parameter) {
 
 
 void setup() {
+  delay(5000);
   Serial.begin(115200);
   Serial1.begin(115200, SERIAL_8N1, RXD2, TXD2);  //FPGA
 
@@ -647,22 +785,30 @@ void setup() {
   gyroZe = g.gyro.z;
   Serial.println("Done");
 
+  //calibration_coor(gyroZe);
+
 
   for (int i = 0; i < 50; i++) {
-    lightSensorReadingFront = analogRead(32);
-    lightSensorReadingBack = analogRead(33);
+    lightSensorReadingFront = analogRead(pinF);
+    lightSensorReadingBack = analogRead(pinB);
+    lightSensorReadingTop = analogRead(pinT);
     errorSum += lightSensorReadingFront - lightSensorReadingBack;
     errorF += lightSensorReadingFront;
     errorB += lightSensorReadingBack;
+    errorT += lightSensorReadingTop;
   }
 
   avgError = errorSum / 50;
   avgF = errorF / 50;
   avgB = errorB / 50;
+  avgT = errorT / 50;
 
   Serial.println(avgError);
   delay(100);
-
+  
+  //reset buffer
+  zoom(6);
+  delay(100);
 
   xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);  // Runs on core 1
 
@@ -736,9 +882,6 @@ String parseJson(const String& json, const String& key) {
     return "null";  // Return an empty string if the key is not found
   }
 }
-
-
-
 
 void roverMotion(String direction) {
   if (direction == "Up") {

@@ -336,6 +336,7 @@ void httpGetPostTask(void* parameter) {
     HTTPClient httpPOST_wallDetection;
     HTTPClient httpGET_nextDirection;
     HTTPClient httpGET_recalibrate;
+    HTTPClient httpGET_stopLeft;
 
     //POST ENDPOINTS Setup ==========================================================
     current_coordinates[0] = coordinates[0];
@@ -357,6 +358,9 @@ void httpGetPostTask(void* parameter) {
 
     String GetEndpoint_recalibrate = "http://" + String(serverAddress) + ":" + String(serverPort) + "/recalibrate";
     httpGET_recalibrate.begin(GetEndpoint_recalibrate);  // Specify the server address and endpoint
+
+    String GetEndpoint_stopLeft = "http://" + String(serverAddress) + ":" + String(serverPort) + "/stopleft";
+    httpGET_stopLeft.begin(GetEndpoint_stopLeft);  // Specify the server address and endpoint
 
 
     //roverCoordinates POST Code =====================================================================
@@ -430,6 +434,23 @@ void httpGetPostTask(void* parameter) {
       Serial.print("Error code for recalibrate: ");
       Serial.println(httpResponseCodeGet_recalibrate);
     }
+
+    //stopLeftFlag = GET stopleft ================================================================
+    int httpResponseCodeGet_stopLeft = httpGET_stopLeft.GET();
+
+    if (httpResponseCodeGet_stopLeft > 0) {
+      //Serial.print("HTTP Response code for recalibration: ");
+      //Serial.println(httpResponseCodeGet_recalibrate);
+      String receivedstopLeft = httpGET_recalibrate.getString();
+      stopLeftFlag = parseJson(receivedstopLeft, "StopLeft");
+      Serial.print("StopLeftFlag Flag: ");
+      Serial.println(stopLeftFlag);
+    } else {
+      Serial.print("Error code for stopLeftFlag: ");
+      Serial.println(httpResponseCodeGet_stopLeft);
+    }
+
+    
 
     // Free resources
     httpPOST_roverCoordinates.end();
