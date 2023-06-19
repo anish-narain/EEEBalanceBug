@@ -122,13 +122,12 @@ int start_coordinates[2];
 int current_coordinates[2];
 String left_following;
 String wall_detection = "true";  //fixed rn, need to change
-String maze_complete = "false";  //fixed rn, need to change
+String maze_complete = "false";   //fixed rn, need to change
 String mvmt_direction;
 String server_direction = "Up";
 String prev_direction;  //need this for null inputs
 String recalibrateFlag;
 String stopLeftFlag;
-
 
 //Function declarations for traversal algorithm
 void roverLeftFollow();
@@ -205,7 +204,7 @@ private:
 
 stepperMotor s1, s2;
 
-/*
+
 void calibration_coor(float gyroZe) {
   float targetAngle = 6.28; // Target angle for the turn
   float currentAngle = 0.0; // Current angle of the turn
@@ -311,7 +310,8 @@ void calibration_coor(float gyroZe) {
   calibrate_x = (x1+x2)/2;
   calibrate_y = (y1+y2)/2;
 }
-*/
+
+
 int printCount;
 int input;  // Serial input data
 
@@ -333,134 +333,82 @@ int lightSensorReadingBack = 0;
 void httpGetPostTask(void* parameter) {
   while (1) {
     //GET AND POST httpclient setup =================================================
-    HTTPClient httpPOST_roverCoordinates;
-    HTTPClient httpPOST_wallDetection;
-    HTTPClient httpGET_nextDirection;
-    HTTPClient httpGET_recalibrate;
-    HTTPClient httpGET_stopLeft;
+    HTTPClient httpPOST;
+    HTTPClient httpGET;
 
-    //POST ENDPOINTS Setup ==========================================================
+    // POST ENDPOINTS Setup ==========================================================
     current_coordinates[0] = coordinates[0];
     current_coordinates[1] = coordinates[1];
 
-    String PostEndpoint_roverCoordinates = "http://" + String(serverAddress) + ":" + String(serverPort) + "/roverCoordinatePost";
-    httpPOST_roverCoordinates.begin(PostEndpoint_roverCoordinates);  // Specify the server address, port, and endpoint
-    httpPOST_roverCoordinates.addHeader("Content-Type", "application/json");
-    String jsonPayload_roverCoordinates = "{\"received_coordinates\":[" + String(current_coordinates[0]) + ", " + String(current_coordinates[1]) + "]}";
+    String PostEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/roverCoordinateAndWallDetection";
+    httpPOST.begin(PostEndpoint);  // Specify the server address, port, and endpoint
+    httpPOST.addHeader("Content-Type", "application/json");
 
-    String PostEndpoint_wallDetection = "http://" + String(serverAddress) + ":" + String(serverPort) + "/wallDetection";
-    httpPOST_wallDetection.begin(PostEndpoint_wallDetection);  // Specify the server address, port, and endpoint
-    httpPOST_wallDetection.addHeader("Content-Type", "application/json");
-    String jsonPayload_wallDetection = "{\"received_walldetection\":" + wall_detection + "}";
+    // Create the JSON object
+    StaticJsonDocument<128> jsonPayload;
+    jsonPayload["jsonPacket"]["received_coordinates"][0] = current_coordinates[0];
+    jsonPayload["jsonPacket"]["received_coordinates"][1] = current_coordinates[1];
+    jsonPayload["jsonPacket"]["received_walldetection"] = wall_detection;
+
+    // Convert the JSON object to a string
+    String jsonString;
+    serializeJson(jsonPayload, jsonString);
+
+    // roverCoordinates POST Code ====================================================
+    int httpResponseCodePost = httpPOST.POST(jsonString);
+
+    if (httpResponseCodePost > 0) {
+      //Serial.print("Button click request sent. Response code for POST : ");
+      //Serial.println(httpResponseCodePost);
+
+      String responseBody = httpPOST.getString();
+      //Serial.print("Response body for POST : ");
+      //Serial.println(responseBody);
+    } else {
+      Serial.print("Error sending request for POST. Error code: ");
+      Serial.println(httpResponseCodePost);
+    }
 
     //GET ENDPOINTS Setup ============================================================
-    String GetEndpoint_nextDirection = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirection";
-    httpGET_nextDirection.begin(GetEndpoint_nextDirection);  // Specify the server address and endpoint
+    String GetEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirectionAndRecalibrateAndStopLeft";
+    httpGET.begin(GetEndpoint);  // Specify the server address and endpoint
+    int httpResponseCodeGet = httpGET.GET();
 
-    String GetEndpoint_recalibrate = "http://" + String(serverAddress) + ":" + String(serverPort) + "/recalibrate";
-    httpGET_recalibrate.begin(GetEndpoint_recalibrate);  // Specify the server address and endpoint
-
-    String GetEndpoint_stopLeft = "http://" + String(serverAddress) + ":" + String(serverPort) + "/stopleft";
-    httpGET_stopLeft.begin(GetEndpoint_stopLeft);  // Specify the server address and endpoint
-
-
-    //roverCoordinates POST Code =====================================================================
-    int httpResponseCodePost_roverCoordinates = httpPOST_roverCoordinates.POST(jsonPayload_roverCoordinates);
-
-    if (httpResponseCodePost_roverCoordinates > 0) {
-      //Serial.print("Button click request sent. Response code for roverCoordinates : ");
-      //Serial.println(httpResponseCodePost_roverCoordinates);
-
-      String responseBody_roverCoordinates = httpPOST_roverCoordinates.getString();
-      //Serial.print("Response body for roverCoordinates: ");
-      //Serial.println(responseBody_roverCoordinates);
+    if (httpResponseCodeGet > 0) {
+      //Serial.print("Response code for GET: ");
+      //Serial.println(httpResponseCodeGet);
+      String jsonReceived = httpGET.getString();
+      direction = parseJson(jsonReceived, "Direction");
+      recalibrateFlag = parseJson(jsonReceived, "Recalibrate");
+      stopLeftFlag = parseJson(jsonReceived, "StopLeft");
+      //Serial.print("Direction: ");
+      //Serial.println(direction);
+      Serial.print("Recalibrate Flag: ");
+      Serial.println(recalibrateFlag);
+      Serial.print("StopLeftFlag Flag: ");
+      Serial.println(stopLeftFlag);
     } else {
-      //Serial.print("Error sending request for rover coordinates. Error code: ");
-      //Serial.println(httpResponseCodePost_roverCoordinates);
+      Serial.print("Error code for Get: ");
+      Serial.println(httpResponseCodeGet);
     }
 
-    //wallDetection POST Code =====================================================================
-    int httpResponseCodePost_wallDetection = httpPOST_wallDetection.POST(jsonPayload_wallDetection);
-
-    if (httpResponseCodePost_wallDetection > 0) {
-      //Serial.print("Button click request sent. Response code for wallDetection : ");
-      //Serial.println(httpResponseCodePost_wallDetection);
-
-      String responseBody_wallDetection = httpPOST_wallDetection.getString();
-      //Serial.print("Response body for wallDetection: ");
-      //Serial.println(responseBody_wallDetection);
-    } else {
-      //Serial.print("Error sending request for wall detection. Error code: ");
-      //Serial.println(httpResponseCodePost_wallDetection);
-    }
-
-    if (wall_detection == "true") {
-      //mvmt_direction = GET nextDirection ================================================================
-      int httpResponseCodeGet_nextDirection = httpGET_nextDirection.GET();
-
-      if (httpResponseCodeGet_nextDirection > 0) {
-        //Serial.print("HTTP Response code: ");
-        //Serial.println(httpResponseCodeGet_nextDirection);
-        mvmt_direction = httpGET_nextDirection.getString();
-        server_direction = extractDirection(mvmt_direction);
-      } else {
-        //Serial.print("Error code for next direction: ");
-        //Serial.println(httpResponseCodeGet_nextDirection);
-      }
-    }
-
-    if (mvmt_direction == "doleftwall") {
+/*
+    //ACTUAL SERVER CODE =============================================================
+    if (wall_detection == "true" && left_following == "true") {
       start_coordinates[0] = current_coordinates[0];
       start_coordinates[1] = current_coordinates[1];
       delay(100);  //let the current coordinates change
       while (start_coordinates != current_coordinates) {
         roverLeftFollow();
       }
-      mvmt_direction = "";
-    } else {
-      //move in mvmt_direction
+      left_following == "false";
     }
-
-    //recalibrateFlag = GET recalibrate ================================================================
-    int httpResponseCodeGet_recalibrate = httpGET_recalibrate.GET();
-
-    if (httpResponseCodeGet_recalibrate > 0) {
-      //Serial.print("HTTP Response code for recalibration: ");
-      //Serial.println(httpResponseCodeGet_recalibrate);
-      String receivedRecalibration = httpGET_recalibrate.getString();
-      recalibrateFlag = parseJson(receivedRecalibration, "Recalibrate");
-      Serial.print("Recalibrate Flag: ");
-      Serial.println(recalibrateFlag);
-    } else {
-      Serial.print("Error code for recalibrate: ");
-      Serial.println(httpResponseCodeGet_recalibrate);
-    }
-
-    //stopLeftFlag = GET stopleft ================================================================
-    int httpResponseCodeGet_stopLeft = httpGET_stopLeft.GET();
-
-    if (httpResponseCodeGet_stopLeft > 0) {
-      String receivedstopLeft = httpGET_stopLeft.getString();
-      stopLeftFlag = parseJson(receivedstopLeft, "StopLeft");
-      //if (stopLeftFlag == "true"){
-      Serial.print("StopLeftFlag Flag: ");
-      Serial.println(stopLeftFlag);
-      //}
-    } else {
-      Serial.print("Error code for stopLeftFlag: ");
-      Serial.println(httpResponseCodeGet_stopLeft);
-    }
-
-    
-
+  */
     // Free resources
-    httpPOST_roverCoordinates.end();
-    httpPOST_wallDetection.end();
-    httpGET_nextDirection.end();
-    httpGET_recalibrate.end();
-    httpGET_stopLeft.end();
+    httpPOST.end();
+    httpGET.end();
 
-    //delay(500);  // Wait for 0.5 seconds before sending the next request
+    //delay(100);  // Wait for 0.5 seconds before sending the next request
   }
 }
 
@@ -472,7 +420,7 @@ float f;
 float b;
 float count = 0;
 int wallDir = 0;
-int wallCount = 100;
+int wallCount = 0;
 bool canChangeDir = false;
 unsigned long prev = 0;
 unsigned long period = 15000;
@@ -486,8 +434,6 @@ void motorTask(void* parameter) {
       byte buf[4];
       Serial1.readBytes(buf, 4);
       raw_decode(buf);
-      //int a = byte2int(buf,4);
-      //Serial.println(a, HEX);
     }
 
     lightSensorReadingFront = analogRead(32);
@@ -540,15 +486,13 @@ void motorTask(void* parameter) {
 
       } else {  // No wall in front
         wallCount++;
-        if (wallCount > 10) {
+        if (wallCount > 20) {
           canChangeDir = true;
         }
 
-        if (aB < -100 && canChangeDir && blockLeft == 0) {
+        if (aF < -150 && canChangeDir && blockLeft == 0) {
           direction = "Left";
-        } else if (aB > 500 && canChangeDir) {
-          direction = "Right";
-        } else if ((aF > 500 || aB > 800) && !canChangeDir && wallDir == 1) {
+        } else if (aF > 150 && canChangeDir) {
           direction = "Right";
         } else {
           direction = "Up";
@@ -564,11 +508,10 @@ void motorTask(void* parameter) {
             direction = "Up";
           }
         }
-
         if (avg < -400) {
           Serial.println("Blocked left");
-          blockLeft = 5;
-          blockLeftDir = 2;
+          blockLeft = 10;
+          blockLeftDir = 7;
         }
       }
     }
@@ -617,12 +560,12 @@ void motorTask(void* parameter) {
     }
 
 
+  
+  coordinates[0] = x;
+  coordinates[1] = y;
 
-    coordinates[0] = x;
-    coordinates[1] = y;
-
-    printCount++;
-    if (printCount == 1000) {
+  printCount++;
+  if (printCount == 1000){
       /*
       Serial.print("X: ");
       Serial.print(x);
@@ -632,8 +575,8 @@ void motorTask(void* parameter) {
       Serial.println(bearing);
       */
       printCount = 0;
-    }
-
+  }
+  
 
     //delay(0);  // Wait for 0.5 seconds before sending the next request
   }
@@ -670,6 +613,15 @@ void setup() {
   gyroZe = g.gyro.z;
   Serial.println("Done");
 
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+
+  Serial.println("Connected to WiFi");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
 
   for (int i = 0; i < 50; i++) {
     lightSensorReadingFront = analogRead(32);
@@ -686,20 +638,9 @@ void setup() {
   Serial.println(avgError);
   delay(100);
 
-
-  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);  // Runs on core 1
-
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
-  }
-
-  Serial.println("Connected to WiFi");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
+  // Create tasks for HTTP GET/POST and motor control
   xTaskCreatePinnedToCore(httpGetPostTask, "HttpGetPostTask", 8192, NULL, 1, NULL, 0);  // Runs on core 0
+  xTaskCreatePinnedToCore(motorTask, "MotorTask", 8192, NULL, 1, NULL, 1);              // Runs on core 1
 }
 
 
@@ -759,8 +700,6 @@ String parseJson(const String& json, const String& key) {
     return "null";  // Return an empty string if the key is not found
   }
 }
-
-
 
 
 void roverMotion(String direction) {
