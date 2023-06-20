@@ -13,6 +13,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdbool.h>
 
 //EEE_IMGPROC defines
 #define EEE_IMGPROC_MSG_START ('R'<<16 | 'B'<<8 | 'B')
@@ -196,6 +197,7 @@ int beacon_dist(int* buf, int num) {
 		}
 		else if (num == 3){
 			//dist = ((width_30/w) * 300) >> 10;
+
 			dist = ((height_30_y/h) * 600) >> 10;
 		}
 
@@ -363,9 +365,10 @@ int main()
         int uart_0_fileno = fileno(ser);
         fcntl(uart_0_fileno, F_SETFL, O_NONBLOCK);
 
-  int state = 0;
+  int state = -1;
   int buf[2];
   int buf_dist[3];
+  //int messageflag = 0x00;
   //usleep(5000000);
 
   while(1){
@@ -482,17 +485,24 @@ int main()
        unsigned char buf[4];
 
 	   if (fread(buf, 1, 4, ser) >= 4) {
-		   int zoom_level = byte2int(buf, 4);
-		   MIPI_BIN_LEVEL(zoom_level);
-		   printf("set bin level to %d\n", zoom_level);
-		   //usleep(500000);
+		   int msg_rcv = byte2int(buf, 4);
+		   if (msg_rcv == 1 || msg_rcv == 2){
+			   MIPI_BIN_LEVEL(msg_rcv);
+			   printf("set bin level to %d\n", msg_rcv);
+			   //usleep(500000);
+		   }
+		   /*
+		   else if (msg_rcv == 5){
+			   //messageflag = 0xFF;
+			   printf("5 received");
+
+		   }
+		   */else if (msg_rcv == 6){
+		   	   fflush(ser);
+		   	   state = -1;
+		   	   printf("reset received\n");
+		   }
 	   }
-
-
-
-
-
-
 
        //Update the bounding box colour
        boundingBoxColour = ((boundingBoxColour + 1) & 0xff);
