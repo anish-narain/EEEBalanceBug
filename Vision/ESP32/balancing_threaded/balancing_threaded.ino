@@ -24,9 +24,9 @@ TaskHandle_t stepper_task;
 //TIMER
 unsigned long prev, test_prev;
 unsigned long T_move = 1000 * 1000; //500ms
-float move_pitch = 2;
 unsigned long T_idle = 3000 * 1000; //1s
 int flag = 0;
+float move_accel = 0.1;
 
 //STEPPER
 AccelStepper r_motor(AccelStepper::DRIVER, R_STPR, R_DIRR);
@@ -48,7 +48,7 @@ float pitch_Kp=1000, pitch_Ki=50, pitch_Kd=400; // 1/16 MICROSTEPPING
 volatile float control_pitch=0; //control input
 float setpoint_accel = 0; //speedsetpoint 
 float e_accel, e_accel_prev=0, e_accel_integral=0, e_accel_derivative=0;
-float accel_Kp=2, accel_Ki=0, accel_Kd=0; // 1/16 MICROSTEPPING
+float accel_Kp=3, accel_Ki=0.01, accel_Kd=0; // 1/16 MICROSTEPPING
 
 float revs2steps(float revs) {
   return QUARTER_MICROSTEPS*revs;
@@ -77,20 +77,15 @@ void control_thread(void* parameter) {
       prev = t;
       idle = 1;
       setpoint_accel = 0;
-      //Serial.println(setpoint_pitch);
+      e_accel_integral = 0;
       digitalWrite(LED_OUT, 0);
     } else if (idle & ((t - prev) > T_idle)) {
       prev = t;
       idle = 0;
-      setpoint_accel = 0.1;
-      //Serial.println(setpoint_pitch);
+      move_accel = -move_accel;
+      setpoint_accel = move_accel;
       digitalWrite(LED_OUT, 1);
     }
-
-    // if (t - test_prev > 100000) {
-    //   test_prev = t;
-    //   Serial.println(accel);
-    // }
 
     //READING FROM SENSORS
     mpu.update();
@@ -99,8 +94,14 @@ void control_thread(void* parameter) {
     pitch = mpu.getAngleY();
     float accX = mpu.getAccX();
     accel = pow(pow(accX, 2) + pow(mpu.getAccY(), 2) + pow(mpu.getAccZ(), 2), 0.5) - 1;
-    accel = (accX > 0) ? -accel : accel;
-    
+    accel = (accX < 0) ? -accel : accel;
+    //accel = (abs(accel) < 0.01) ? 0 : accel;
+
+
+    // if ((t - test_prev) > 200000) {
+    //   test_prev = t;
+    //   Serial.println(control_pitch);
+    // }
 
     //CALCULATE ERRORS
     e_accel = accel - setpoint_accel;
@@ -109,6 +110,7 @@ void control_thread(void* parameter) {
 
     //PID Controller
     control_pitch = (accel_Kp*e_accel) + (accel_Ki*e_accel_integral) + (accel_Kd*e_accel_derivative);
+    control_pitch = constrain(control_pitch, -5, 5);
     
     //CASCADED CONTROL
     setpoint_pitch = idle ? 0 : control_pitch;
@@ -172,7 +174,7 @@ void setup() {
   xTaskCreatePinnedToCore(
                     control_thread,   /* Function to implement the task */
                     "control_thread", /* Name of the task */
-                    2048,      /* Stack size in words */
+                    4096,      /* Stack size in words */
                     NULL,       /* Task input parameter */
                     1,          /* Priority of the task */
                     &control_task,
