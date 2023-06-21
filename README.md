@@ -5,7 +5,7 @@
 | ------------- | ------------- |
 | Control  | Content Cell  |
 | DeadReckoning Trial  | Content Cell  |
-| Energy  | Content Cell  |
+| Energy  | Stores all code used to perform the MPPT algorithm on the Boost SMPS and code used to control the Buck LED Driver SMPS  |
 | RemoteSystemsTempFiles  | Content Cell  |
 | ShortestPath  | Stores all versions of the Shortest Path code used during the project, to create a lined image from the coordinates and stores the lined image in a file. The lined image can then be image processed to find the shortest path in MatLab.   |
 | Vision  | Content Cell  |
