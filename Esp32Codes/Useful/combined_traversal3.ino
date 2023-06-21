@@ -663,7 +663,7 @@ void motorTask(void* parameter) {
         gyroRecalCount = 0;
       }
 
-
+      
       Serial.print(aF);
       Serial.print(", ");
       Serial.print(aB);
@@ -678,8 +678,10 @@ void motorTask(void* parameter) {
       Serial.print(", ");
       Serial.print(bearing);
       Serial.print(", ");
-      Serial.println(canGyroRecal);
-
+      Serial.print(x);
+      Serial.print(", ");
+      Serial.println(y);
+      
 
 
       if (turningRight == 0) {
@@ -755,10 +757,10 @@ void motorTask(void* parameter) {
           if (aB < -100 && canChangeDir && blockLeft == 0) {
             direction = "Left";
             //Serial.println("Left");
-          } else if ((aB > 100 || aF > 500) && canChangeDir) {
+          } else if ((aB > 100 || aF > 300) && canChangeDir) {
             direction = "Right";
             //Serial.println("Turn away");
-          } else if ((aB > 400 || aF > 1000) && !canChangeDir && wallDir == 1) {
+          } else if ((aB > 400 || aF > 450) && !canChangeDir && wallDir == 1) {
             direction = "Right";
             //Serial.println("right");
           } else {
@@ -802,13 +804,10 @@ void motorTask(void* parameter) {
       s2.start();
       s1.changeDirection(true);
       s2.changeDirection(true);
-      s1.control();
-      s2.control();
     } else {
       s1.stop();
       s2.stop();
     }
-
 
     s1.control();
     s2.control();
@@ -821,7 +820,6 @@ void motorTask(void* parameter) {
 
     if (stepFlag) {
       stepFlag = false;
-
 
       // Increment co-ordinates based on direction
       if (direction == "Up") {
