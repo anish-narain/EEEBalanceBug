@@ -159,8 +159,8 @@ String server_direction = "Up";
 String prev_direction;  //need this for null inputs
 String recalibrateFlag;
 String stopLeftFlag;
-String BeaconFlag;
-String CompleteFlag;
+String beaconFlag;
+String completeFlag;
 int turningRight = -1;
 
 //Function declarations for traversal algorithm
@@ -520,7 +520,7 @@ void httpGetPostTask(void* parameter) {
     
 
     //GET ENDPOINTS Setup ============================================================
-    String GetEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirectionAndRecalibrateAndStopLeft";
+    String GetEndpoint = "http://" + String(serverAddress) + ":" + String(serverPort) + "/nextDirectionAndRecalibrateAndStopLeftAndBeaconAndComplete";
     httpGET.begin(GetEndpoint);  // Specify the server address and endpoint
     
     int httpResponseCodeGet = httpGET.GET();
@@ -532,14 +532,14 @@ void httpGetPostTask(void* parameter) {
       direction = parseJson(jsonReceived, "Direction");
       recalibrateFlag = parseJson(jsonReceived, "Recalibrate");
       stopLeftFlag = parseJson(jsonReceived, "StopLeft");
-      BeaconFlag = parseJson(jsonReceived, "Beacon");
-      CompleteFlag = parseJson(jsonReceived, "Complete");
+      beaconFlag = parseJson(jsonReceived, "Beacon");
+      completeFlag = parseJson(jsonReceived, "Complete");
       //Serial.print("Direction: ");
       //Serial.println(direction);
       //Serial.print("Recalibrate Flag: ");
       //Serial.println(recalibrateFlag);
-      //Serial.print("StopLeftFlag Flag: ");
-      //Serial.println(stopLeftFlag);
+      Serial.print("Complete Flag: ");
+      Serial.println(completeFlag);
     } else {
       Serial.print("Error code for Get: ");
       Serial.println(httpResponseCodeGet);
@@ -591,11 +591,11 @@ void motorTask(void* parameter) {
       recalibrateFlag = "false";
     }
 
-    if (BeaconFlag == "true") {
+    if (beaconFlag == "true") {
       int returnedVal = calibration_coor(gyroZe);
     }
 
-    if (CompleteFlag == "true"){
+    if (completeFlag == "true"){
       Serial.println("maze traversal end");
       s1.stop();
       s2.stop();
