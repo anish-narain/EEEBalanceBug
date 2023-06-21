@@ -12,6 +12,8 @@
 | LearningFrontEnd | Used to store trials for the front-end web app and server before adding it to a new GitHub repository  |
 | ESP32Codes  | Stores all versions of ESP32 Arduino code used during the project, the final code used was Final.ino |
 
+RoverWebServer Repository: https://github.com/Riya050302/rover-webserver
 
+RoverWebApp Repository: https://github.com/anish-narain/rover-webapp
 
 There is a ReadMe within each folder explaining the contents in more detail...
