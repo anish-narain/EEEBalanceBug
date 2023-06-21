@@ -1,5 +1,5 @@
 # EEEBalanceBug
-2nd Year EIE, Final Term Project
+2nd Year EEE/EIE, Final Term Project
 
 | Folder  | Description |
 | ------------- | ------------- |
