@@ -9,7 +9,9 @@
 | sprint3_motorOnePhotoTransistor, sprint3_motorTwoPhotoTransistor | Phototransistor code without camera  |
 | sprint3_phototransistorsWithCamera | Combines two phototransistors with camera code  |
 | leftwallAndServer_single | This combines left wall following with single GET/POST server code |
-|  WallFollowing | Awais’s code for wall following  |
+| WallFollowing | Awais’s code for wall following  |
 | WallFollowingWithoutButtons| Steven’s code for wall following with beacons |
 | traversal1 | leftwallserver_multi + exit left wall following button + (multiGETPOST which contains stopLeft and recalibrate)  |
 | traversal2  | leftwallserver_single + exit left wall following button + (singleGETPOST which contains stopLeft and recalibrate) |
+| final  | contains final esp32 code run for demo day |
+
