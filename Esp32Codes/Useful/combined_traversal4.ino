@@ -33,6 +33,8 @@ int zoom_level = 1;
 int r_state = -1;
 int t_flag = 0;
 
+float lastT = 0;
+
 unsigned long prev = 0;
 unsigned long period = 30000;
 float calibrate_x = 1.0;
@@ -572,6 +574,8 @@ int rightWallCount;
 int gyroRecalCount;
 bool canGyroRecal = false;
 
+float beaconAngle;
+
 void motorTask(void* parameter) {
   while (1) {
 
@@ -592,7 +596,9 @@ void motorTask(void* parameter) {
     }
 
     if (beaconFlag == "true") {
+      beaconAngle = bearing;
       int returnedVal = calibration_coor(gyroZe);
+      bearing = beaconAngle;
     }
 
     if (completeFlag == "true"){
@@ -811,6 +817,9 @@ void motorTask(void* parameter) {
 
     s1.control();
     s2.control();
+
+    //Serial.println(micros() - lastT);
+    lastT = micros();
 
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);  // Get sensor readings

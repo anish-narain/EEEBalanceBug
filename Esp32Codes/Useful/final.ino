@@ -11,7 +11,7 @@ float gyroZe;
 
 #define dirPin1 18
 #define stepPin1 19
-#define dirPin2 5
+#define dirPin2 4
 #define stepPin2 23
 #define stepsPerRevolution 200
 
@@ -32,6 +32,8 @@ int zoom_level = 1;
 
 int r_state = -1;
 int t_flag = 0;
+
+float lastT = 0;
 
 unsigned long prev = 0;
 unsigned long period = 30000;
@@ -572,6 +574,8 @@ int rightWallCount;
 int gyroRecalCount;
 bool canGyroRecal = false;
 
+float beaconAngle;
+
 void motorTask(void* parameter) {
   while (1) {
 
@@ -592,7 +596,10 @@ void motorTask(void* parameter) {
     }
 
     if (beaconFlag == "true") {
+      beaconAngle = bearing;
       int returnedVal = calibration_coor(gyroZe);
+      bearing = beaconAngle;
+      gyroRecal();
     }
 
     if (completeFlag == "true"){
@@ -638,31 +645,6 @@ void motorTask(void* parameter) {
       //Serial.println(avg);
 
       aF = aF - aT;  // Remove ambient light
-
-      gyroRecalCount++;
-      if (gyroRecalCount >= 500 && turningRight == -1 && direction == "Up" && canGyroRecal) {
-        Serial.println("Gyro recal");
-        s1.stop();
-        s2.stop();
-        s1.control();
-        s2.control();
-        direction = "Stop";
-
-        delay(500);
-        float zs = 0;
-        for (int i = 0; i < 10; i++) {
-          sensors_event_t a, g, temp;
-          mpu.getEvent(&a, &g, &temp);
-          zs += g.gyro.z;
-          delay(10);
-        }
-
-        gyroZe = zs / 10;
-        direction = "Up";
-
-        gyroRecalCount = 0;
-      }
-
       
       Serial.print(aF);
       Serial.print(", ");
@@ -682,7 +664,11 @@ void motorTask(void* parameter) {
       Serial.print(", ");
       Serial.println(y);
       
-
+    gyroRecalCount++;
+  if (gyroRecalCount >= 500 && turningRight == -1 && direction == "Up" && canGyroRecal) {
+   gyroRecal();
+   gyroRecalCount = 0; 
+  }
 
       if (turningRight == 0) {
 
@@ -812,6 +798,9 @@ void motorTask(void* parameter) {
     s1.control();
     s2.control();
 
+    //Serial.println(micros() - lastT);
+    lastT = micros();
+
     sensors_event_t a, g, temp;
     mpu.getEvent(&a, &g, &temp);  // Get sensor readings
     Ts = micros() - lastTime;     // Time since last loop
@@ -854,6 +843,28 @@ void motorTask(void* parameter) {
   }
 }
 
+void gyroRecal(){
+
+  Serial.println("Gyro recal");
+  s1.stop();
+  s2.stop();
+  s1.control();
+  s2.control();
+  direction = "Stop";
+
+  delay(1000);
+  float zs = 0;
+  for (int i = 0; i < 10; i++) {
+    sensors_event_t a, g, temp;
+    mpu.getEvent(&a, &g, &temp);
+    zs += g.gyro.z;
+    delay(10);
+  }
+
+  gyroZe = zs / 10;
+  direction = "Up";
+
+}
 
 
 void setup() {
