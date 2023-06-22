@@ -356,7 +356,7 @@ int calibration_coor(float gyroZe) {
     Serial.println("");
    */
 
-  if ((count[0] != 0 & count[2] != 0)) {
+  if (count[1] == 0) {
 
     avg_dist[0] = sum_dist[0] / count[0];
     avg_dist[2] = sum_dist[2] / count[2];
@@ -390,7 +390,7 @@ int calibration_coor(float gyroZe) {
     */
     calibrate_x = x1;
     calibrate_y = y1;
-  } else if ((count[1] != 0 & count[2] != 0)) {
+  } else if (count[0] == 0) {
     avg_dist[1] = sum_dist[1] / count[1];
     avg_dist[2] = sum_dist[2] / count[2];
 
@@ -479,8 +479,8 @@ void httpGetPostTask(void* parameter) {
       current_coordinates[0] = coordinates[0];
       current_coordinates[1] = coordinates[1];
     } else {
-      current_coordinates[0] = lastX;
-      current_coordinates[1] = lastY;
+      current_coordinates[0] = 7777; //lastX
+      current_coordinates[1] = 7777; //lastY
     }
 
 
