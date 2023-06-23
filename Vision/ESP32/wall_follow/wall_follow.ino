@@ -3,7 +3,10 @@
 #include <ctype.h>
 
 #define RXD2 16 // FPGA side: (ARDUINO_IO[9])
-#define TXD2 17 // FPGA side: (ARDUINO_IO[8]) 
+#define TXD2 17 // FPGA side: (ARDUINO_IO[8])
+
+#define R_STPR 22
+#define R_DIRR 23
 
 //STEPPER
 
@@ -11,66 +14,96 @@ const int stepsPerRevolution = 200;  // change this to fit the number of steps p
 // for your motor
 
 // initialize the stepper library on pins 8 through 11:
-Stepper r_stepper(stepsPerRevolution, 8, 9, 10, 11);
+Stepper r_stepper(stepsPerRevolution, R_STPR, R_DIRR);
 
 int stepCount = 0;  // number of steps the motor has taken
 
 //COMMUNICATION
 
-unsigned long start = 0;
-unsigned long period = 500;
-
 unsigned int dist[3] = {0};
-int centre[2] = {0};
-int x_error = 0;
+bool col_detect = true;
+int zoom_level = 1;
 
-int state = -1;
+int r_state = -1;
+int t_flag = 0;
+
+unsigned long prev = 0;
+unsigned long period = 5000;
+
 
 int byte2int(byte* buf, int size) {
   int val=0;
 
-  for (int i=(size-1); i>=0; i--) {
-    val += buf[i] << (8*i);
+  for (int i=0; i<size; i++) {
+    val+= buf[i] << (8*i);
   }
 
   return val;
 }
 
+int byte2int_signed(byte* buf, int size) {
+  int val=0;
+
+  for (int i=0; i<(size-1); i++) {
+    val += buf[i] << (8*i);
+  }
+
+  int MSB = (signed char) buf[size-1];
+  val += MSB << (8*(size-1)); 
+
+  return val;
+}
+
+void int2byte(int n, byte bytes[4]) {
+  for (int i=0; i<4; i++) {
+    bytes[i] = (n >> 8*i) & 0xFF;
+  }
+}
+
 int raw_decode(byte* buf) {
+
+  int i;
 
   //start condition
   if (byte2int(buf, 4) == 0x00524242) {
-    state = 0;
+    r_state = 0;
   }
 
   //output
-  switch(state) {
+  switch(r_state) {
     case 0:
       break;
-    case 1: case 2: case 3:
-      dist[state-1] = byte2int(buf, 4);
-      break;
-    case 4:
-      x_error = byte2int_signed(buf, 4);
-      break;
-    case 5:
-      for (int i=0; i<2; i++) {
-        centre[i] = byte2int(buf+(i*2), 2);
+    case 1:
+      i = byte2int_signed(buf+3, 1);
+      if (i == -1) {
+        Serial.println("no beacons");
+      } else {
+        dist[i] = byte2int(buf, 3);
+        Serial.printf("dist to beacon %d = %d mm\n", i, dist[i]);
       }
       break;
+    case 2:
+      col_detect = (bool)byte2int(buf, 4);
+      break;
     default:
-      Serial.println("no message");
       break;
   }
 
-  //next state
-  if (state > -1 & state < 5) {
-    state++;
-  } else if (state == 5) {
-    state = -1;
+  //next r_state
+  if (r_state > -1 & r_state < 2) {
+    r_state++;
+  } else if (r_state == 2) {
+    r_state = -1;
   }
 
   return 0;
+}
+
+void metrics2string() {
+  Serial.printf("dist_red = %d\n", dist[0]);
+  Serial.printf("dist_yellow = %d\n", dist[1]);
+  Serial.printf("dist_blue = %d\n", dist[2]);
+  Serial.printf("col_detect = %d\n", col_detect);
 }
 
 void setup() {
@@ -86,14 +119,19 @@ void loop() {
     raw_decode(buf);
   }
 
-  // read the sensor value:
-  int sensorReading = analogRead(A0);
-  // map it to a range from 0 to 100:
+  int sensorReading;
+
+  unsigned long current  = millis();
+  if (current - prev == period) {
+    prev = current;
+    sensorReading = (sensorReading >= 1023) ? 0 : sensorReading++;
+  }
+
   int motorSpeed = map(sensorReading, 0, 1023, 0, 100);
   // set the motor speed:
   if (motorSpeed > 0) {
-    myStepper.setSpeed(motorSpeed);
+    r_stepper.setSpeed(motorSpeed);
     // step 1/100 of a revolution:
-    myStepper.step(stepsPerRevolution / 100);
+    r_stepper.step(stepsPerRevolution / 100);
   }
 }
