@@ -2,12 +2,12 @@ import machine
 from machine import Pin, ADC, PWM, Timer, deepsleep, lightsleep, RTC
 import time
 
-time.sleep(5)
+time.sleep(5) # Pauses execution for 5 seconds when powered on, gives time to connect through IDE before code starts running
 
 vret_pin = ADC(Pin(26)) # Current sensor (1.02 ohm resistor)
 vout_pin = ADC(Pin(28)) # Output voltage (multiplied by 2.49/12.49 ~ 1/5)
 vin_pin = ADC(Pin(27)) # Input voltage (multiplied by 2.49/12.49 ~ 1/5)
-led = Pin("LED", Pin.OUT)
+led = Pin("LED", Pin.OUT) # Onboard LED pin
 
 pwm = PWM(Pin(0))
 pwm.freq(100000)
@@ -17,7 +17,7 @@ printCount = 0
 pwm_out = 0 # Actual value to output
 pwm_ref = 0 # Intended value to output
 
-loopTrigger = False
+loopTrigger = False # Flag that is set to true every 1ms
 loopTimer = Timer()
 def allowLoop(timer):
     global loopTrigger
@@ -76,58 +76,58 @@ while True:
     if loopTrigger:
         
         now = time.ticks_us()
-        Ts = time.ticks_diff(now, lastTime)
+        Ts = time.ticks_diff(now, lastTime) # Calculates difference in time between loops
         lastTime = now
         
         vin = ((vin_pin.read_u16()/65535) * 3.3) / (2.49 / 12.49) # Convert input voltage ADC to voltage value
         vout = ((vout_pin.read_u16()/65535) * 3.3) / (2.49 / 12.49) # Convert output voltage ADC to voltage value
         iret = ((vret_pin.read_u16()/65535) * 3.3) / 1.02 # Convert current sensing resistor ADC value to current
         
-        loopTrigger = False
+        loopTrigger = False # Resets flag
         
-        if vin < thL and canSleep:
+        if vin < thL and canSleep: # If input voltage drops below minimum value
             runLight = False
-            pwm_en.value(0)
+            pwm_en.value(0) # Disable PWM
             pwm.duty_u16(0)
             print("Stopped")
             
             #time.sleep(1)
-            lightsleep(1000)
+            lightsleep(1000) # Enter light sleep for 1s for improved efficiency
             #deepsleep(1000)
                 
-        elif vin > thH and not runLight:
+        elif vin > thH and not runLight: # Once input voltage rises again
             runLight = True
             canSleep = True
             
             pwm_ref = 0
-            voutErrorSum = 0
+            voutErrorSum = 0 # Reset controller signals
             voutError = 0
             voutErrorLast = 0
             pwm_en.value(1)
             
-            for i in range(10):
+            for i in range(10): # FLash LED 10 times to indicate wakeup
                 led.toggle()
                 time.sleep(0.1)
             
         if runLight:
                 
             # PID Controller
-            voutError = voutTarget - vout
+            voutError = voutTarget - vout # Works out error between target and actual output voltage
             """if (voutError) < 0:
                 print(voutError, voutTarget, vout)"""
-            voutErrorSum += voutError * (Ts / 1000000)
-            if voutErrorSum > 5000:
+            voutErrorSum += voutError * (Ts / 1000000) # Use a sum in place of integral
+            if voutErrorSum > 5000: # Constrains the sum to stop it growing too large
                 voutErrorSum = 5000
             elif voutErrorSum < -5000:
                 voutErrorSum = -5000
             
-            change = (kp * voutError) + (ki * voutErrorSum) + (kd * (voutErrorLast - voutError) / Ts)
-            if change > 5000:
+            change = (kp * voutError) + (ki * voutErrorSum) + (kd * (voutErrorLast - voutError) / Ts) # PID equation
+            if change > 5000: # Constrains output
                 change = 5000
             elif change < -5000:
                 change = -5000
             
-            pwm_ref += change
+            pwm_ref += change # Changes duty cycle
             pwm_ref = saturate(pwm_ref)
             voutErrorLast = voutError
             
@@ -135,17 +135,17 @@ while True:
                 pwm_ref -= change # Restrict duty cycle
                 print("Current Limit")
                 
-            if vout > vCutoff:
-                pwm_ref -= change
+            if vout > vCutoff: # If above voltage limit
+                pwm_ref -= change # Restrict duty cycle
                 print("Voltage Limit")
             
             pwm_out = saturate(pwm_ref) # Limit duty cycle
             pwm.duty_u16(int(pwm_out)) # Output duty cycle
             
-            if vout > vMax:
+            if vout > vMax: # Records the highest output voltage achieved
                 vMax = vout
                 
-            flashCounter += 1
+            flashCounter += 1 # Flashes LED beacons every 1s
             if flashCounter >= 1000:
                 pwm_en.value(0)
                 pwm.duty_u16(0)
