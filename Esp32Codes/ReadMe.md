@@ -1,6 +1,7 @@
 # ESP32 Codes File Description
  
- 
+Contained inside the Useful folder:
+
  | Folder   | Description |
 | ------------- | ------------- |
 | sprint3_multiGetPost, sprint3_oneGetPost   | Multithreading code for manual mode (connected to server) |
