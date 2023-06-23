@@ -3,7 +3,7 @@
 
 | Folder  | Description |
 | ------------- | ------------- |
-| Control  | Content Cell  |
+| Control  | Stores iterations of the control system software. File were originally located in Vision/ESP32 and commit history reflects this. balancing_threaded.ino is the final stable version of the balancing control system. It contains code for cascaded control with an acceleration outer loop but open-loop pitch control proved more effective for moving the rover, so the outer-loop is bypassed. The accelerometer readings were far too noisy, causing large vibrations.  |
 | DeadReckoning Trial  | Content Cell  |
 | Energy  | Stores all code used to perform the MPPT algorithm on the Boost SMPS and code used to control the Buck LED Driver SMPS  |
 | ShortestPath  | Stores all versions of the Shortest Path code used during the project, to create a lined image from the coordinates and stores the lined image in a file. The lined image can then be image processed to find the shortest path in MatLab.   |
