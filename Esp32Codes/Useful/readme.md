@@ -9,5 +9,7 @@
 **sprint3_phototransistorsWithCamera** == Combines two phototransistors with camera code
 
 This is successful left wall following from end of Monday == **phototransistor_withCamera_andBeacons**
+
 This combines left wall following with multi GET/POST server code == **leftwallAndServer_multi**
+
 This combines left wall following with single GET/POST server code == **leftwallAndServer_single**
