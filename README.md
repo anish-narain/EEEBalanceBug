@@ -15,4 +15,4 @@ Rover WebServer Repository: https://github.com/Riya050302/rover-webserver
 
 Rover WebApp Repository: https://github.com/anish-narain/rover-webapp
 
-There is a ReadMe within each folder explaining the contents in more detail.
+There is a ReadMe within some of the folders explaining the contents in more detail.
