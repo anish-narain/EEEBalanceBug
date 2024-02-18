@@ -1,7 +1,7 @@
 # EEEBalanceBug
 2nd Year EEE/EIE, Final Term Project
 
-Please read `project-report.pdf` for a detailed description of each part of the project.
+Please read [project-report.pdf](https://github.com/anish-narain/EEEBalanceBug/blob/main/project-report.pdf) for a detailed description of each part of the project.
 
 ![final chassis images](final-design.png)
 
