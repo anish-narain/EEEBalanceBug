@@ -1,6 +1,10 @@
 # EEEBalanceBug
 2nd Year EEE/EIE, Final Term Project
 
+Please read `project-report.pdf` for a detailed description of each part of the project.
+
+![final chassis images](final-design.png)
+
 | Folder  | Description |
 | ------------- | ------------- |
 | Control  | Stores iterations of the control system software. File were originally located in Vision/ESP32 and commit history reflects this. balancing_threaded.ino is the final stable version of the balancing control system. It contains code for cascaded control with an acceleration outer loop but open-loop pitch control proved more effective for moving the rover, so the outer-loop is bypassed. The accelerometer readings were far too noisy, causing large vibrations.  |
